@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Club FisioTeck</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #0A6E5C;
+      --primary-light: #0D8A73;
+      --primary-dark: #064D40;
+      --accent: #E8B931;
+      --accent-light: #F5D56A;
+      --bg: #F3F4F6;
+      --bg-card: #FFFFFF;
+      --bg-dark: #111827;
+      --bg-sidebar: #0F172A;
+      --text: #1F2937;
+      --text-light: #6B7280;
+      --text-muted: #9CA3AF;
+      --border: #E5E7EB;
+      --success: #22C55E;
+      --danger: #EF4444;
+      --warning: #F59E0B;
+      --info: #3B82F6;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 1px 3px rgba(0,0,0,.08);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,.1);
+      --transition: .25s ease;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Outfit',sans-serif; background:var(--bg); color:var(--text); line-height:1.5; }
+    a { text-decoration:none; color:inherit; }
+    button { cursor:pointer; border:none; font-family:inherit; }
+
+    /* AUTH SCREEN */
+    #auth-screen {
+      position:fixed; inset:0; z-index:10000;
+      background:var(--bg-dark);
+      display:flex; align-items:center; justify-content:center;
+    }
+    #auth-screen.hidden { display:none; }
+    .auth-box {
+      text-align:center; color:#fff; width:90%; max-width:380px;
+      animation: fadeUp .6s ease;
+    }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+    .auth-title { font-family:'Playfair Display',serif; font-size:1.8rem; margin-bottom:4px; }
+    .auth-title span { color:var(--accent); }
+    .auth-badge { display:inline-block; background:var(--danger); padding:3px 12px; border-radius:20px; font-size:.7rem; font-weight:600; margin-bottom:24px; letter-spacing:1px; }
+    .auth-input {
+      width:100%; padding:12px 16px; margin-bottom:12px; border-radius:var(--radius-sm);
+      border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.06); color:#fff;
+      font-size:.95rem; font-family:inherit; outline:none;
+    }
+    .auth-input:focus { border-color:var(--accent); }
+    .auth-input::placeholder { color:rgba(255,255,255,.3); }
+    .auth-btn {
+      width:100%; padding:12px; background:var(--accent); color:var(--bg-dark); font-weight:600;
+      border-radius:var(--radius-sm); font-size:.95rem; transition:var(--transition);
+    }
+    .auth-btn:hover { background:var(--accent-light); }
+    .auth-error { color:var(--danger); font-size:.82rem; margin-top:8px; display:none; }
+
+    /* LAYOUT */
+    .admin-wrapper { display:flex; min-height:100vh; }
+    .admin-sidebar {
+      width:240px; background:var(--bg-sidebar); color:#fff; position:fixed;
+      top:0; left:0; bottom:0; z-index:100; display:flex; flex-direction:column;
+      transition:var(--transition);
+    }
+    .admin-sidebar-header { padding:20px; border-bottom:1px solid rgba(255,255,255,.06); }
+    .admin-sidebar-header h2 { font-family:'Playfair Display',serif; font-size:1.2rem; }
+    .admin-sidebar-header h2 span { color:var(--accent); }
+    .admin-sidebar-header .admin-tag { font-size:.65rem; background:var(--danger); padding:2px 8px; border-radius:10px; font-weight:600; display:inline-block; margin-top:4px; }
+    .admin-nav { flex:1; padding:12px 0; overflow-y:auto; }
+    .admin-nav-item {
+      display:flex; align-items:center; gap:10px; padding:10px 20px;
+      font-size:.88rem; color:rgba(255,255,255,.5); cursor:pointer; transition:var(--transition);
+      border-left:3px solid transparent;
+    }
+    .admin-nav-item:hover { color:#fff; background:rgba(255,255,255,.04); }
+    .admin-nav-item.active { color:var(--accent); border-left-color:var(--accent); background:rgba(232,185,49,.05); }
+    .admin-nav-item svg { width:18px; height:18px; flex-shrink:0; }
+    .admin-nav-section { padding:6px 20px; font-size:.65rem; text-transform:uppercase; letter-spacing:1.5px; color:rgba(255,255,255,.2); margin-top:12px; }
+    .admin-sidebar-footer {
+      padding:16px 20px; border-top:1px solid rgba(255,255,255,.06);
+      font-size:.8rem; color:rgba(255,255,255,.4);
+    }
+
+    .admin-main { flex:1; margin-left:240px; padding:24px 28px 48px; }
+
+    /* MOBILE */
+    .mobile-admin-bar {
+      display:none; position:fixed; top:0; left:0; right:0; height:56px;
+      background:var(--bg-sidebar); padding:0 16px; align-items:center; justify-content:space-between; z-index:99;
+    }
+    .mobile-admin-bar h2 { font-family:'Playfair Display',serif; font-size:1rem; color:#fff; }
+    .mobile-admin-bar h2 span { color:var(--accent); }
+    .mobile-admin-bar button { background:none; color:#fff; padding:8px; }
+    .admin-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:99; }
+    @media(max-width:768px) {
+      .mobile-admin-bar { display:flex; }
+      .admin-sidebar { transform:translateX(-100%); z-index:101; }
+      .admin-sidebar.open { transform:translateX(0); }
+      .admin-overlay.open { display:block; }
+      .admin-main { margin-left:0 !important; padding-top:72px !important; }
+    }
+
+    /* PAGE HEADER */
+    .admin-page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:12px; }
+    .admin-page-title { font-size:1.5rem; font-weight:700; }
+    .admin-page-sub { font-size:.85rem; color:var(--text-light); }
+
+    /* BUTTONS */
+    .btn { padding:10px 20px; border-radius:var(--radius-sm); font-size:.88rem; font-weight:500; transition:var(--transition); display:inline-flex; align-items:center; gap:6px; }
+    .btn-p { background:var(--primary); color:#fff; } .btn-p:hover { background:var(--primary-dark); }
+    .btn-d { background:var(--danger); color:#fff; } .btn-d:hover { background:#DC2626; }
+    .btn-w { background:var(--warning); color:#fff; } .btn-w:hover { background:#D97706; }
+    .btn-o { background:transparent; border:1px solid var(--border); color:var(--text); } .btn-o:hover { border-color:var(--primary); color:var(--primary); }
+    .btn-sm { padding:6px 14px; font-size:.8rem; }
+    .btn-icon { padding:6px 8px; border-radius:6px; }
+
+    /* CARDS */
+    .admin-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:20px; margin-bottom:20px; }
+    .admin-card h3 { font-size:1rem; font-weight:600; margin-bottom:16px; }
+
+    /* TABLE */
+    .admin-table { width:100%; border-collapse:collapse; font-size:.85rem; }
+    .admin-table thead th { padding:10px 12px; text-align:left; color:var(--text-muted); font-weight:500; border-bottom:2px solid var(--border); font-size:.78rem; text-transform:uppercase; letter-spacing:.5px; }
+    .admin-table tbody td { padding:12px; border-bottom:1px solid var(--border); vertical-align:middle; }
+    .admin-table tbody tr:hover { background:rgba(10,110,92,.02); }
+    .badge { padding:3px 10px; border-radius:20px; font-size:.72rem; font-weight:600; }
+    .badge-success { background:rgba(34,197,94,.1); color:var(--success); }
+    .badge-warning { background:rgba(245,158,11,.1); color:var(--warning); }
+    .badge-danger { background:rgba(239,68,68,.1); color:var(--danger); }
+    .badge-info { background:rgba(59,130,246,.1); color:var(--info); }
+
+    /* FORM MODAL */
+    .modal-overlay {
+      display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:9000;
+      align-items:center; justify-content:center; padding:20px;
+    }
+    .modal-overlay.active { display:flex; }
+    .modal-box {
+      background:#fff; border-radius:var(--radius); width:100%; max-width:560px;
+      max-height:90vh; overflow-y:auto; animation: fadeUp .3s ease;
+    }
+    .modal-header { padding:20px 24px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+    .modal-header h3 { font-size:1.05rem; font-weight:600; }
+    .modal-close { background:none; font-size:1.4rem; color:var(--text-muted); padding:4px 8px; }
+    .modal-body { padding:24px; }
+    .modal-footer { padding:16px 24px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:10px; }
+    .form-group { margin-bottom:16px; }
+    .form-label { display:block; font-size:.82rem; font-weight:500; color:var(--text-light); margin-bottom:5px; }
+    .form-input, .form-select, .form-textarea {
+      width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:var(--radius-sm);
+      font-size:.9rem; font-family:inherit; outline:none; transition:var(--transition);
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { border-color:var(--primary); }
+    .form-textarea { resize:vertical; min-height:80px; }
+    .form-select { cursor:pointer; background:#fff; }
+
+    /* STATS ROW */
+    .stats-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin-bottom:24px; }
+    .stat-box { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:18px; }
+    .stat-box .stat-icon { width:40px; height:40px; border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; font-size:1.2rem; margin-bottom:10px; }
+    .stat-box .stat-val { font-size:1.8rem; font-weight:700; }
+    .stat-box .stat-lbl { font-size:.75rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; }
+
+    /* SECTIONS */
+    .admin-section { display:none; }
+    .admin-section.active { display:block; animation: fadeIn .3s ease; }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+    /* CONFIG SECTION */
+    .config-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+    @media(max-width:768px) { .config-grid { grid-template-columns:1fr; } }
+
+    /* TOAST */
+    .admin-toast {
+      position:fixed; bottom:20px; right:20px; background:var(--bg-dark); color:#fff;
+      padding:12px 20px; border-radius:var(--radius-sm); font-size:.88rem;
+      transform:translateY(80px); opacity:0; transition:var(--transition); z-index:9999;
+    }
+    .admin-toast.show { transform:translateY(0); opacity:1; }
+
+    /* Responsive table */
+    @media(max-width:600px) {
+      .admin-table { font-size:.78rem; }
+      .admin-table thead th, .admin-table tbody td { padding:8px 6px; }
+      .admin-main { padding:12px 12px 48px; }
+      .stats-row { grid-template-columns:1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-title">Club Fisio<span>Teck</span></div>
+    <div class="auth-badge">PANEL ADMIN</div>
+    <input type="password" class="auth-input" id="adminPass" placeholder="Contraseña de administrador">
+    <button class="auth-btn" onclick="adminLogin()">Acceder</button>
+    <div class="auth-error" id="adminError">Contraseña incorrecta</div>
+  </div>
+</div>
+
+<!-- MOBILE BAR -->
+<div class="mobile-admin-bar">
+  <h2>Fisio<span>Teck</span> Admin</h2>
+  <button onclick="toggleAdminSidebar()">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+</div>
+<div class="admin-overlay" id="adminOverlay" onclick="toggleAdminSidebar()"></div>
+
+<!-- LAYOUT -->
+<div class="admin-wrapper">
+  <nav class="admin-sidebar" id="adminSidebar">
+    <div class="admin-sidebar-header">
+      <h2>Club Fisio<span>Teck</span></h2>
+      <div class="admin-tag">ADMINISTRADOR</div>
+    </div>
+    <div class="admin-nav">
+      <div class="admin-nav-section">General</div>
+      <div class="admin-nav-item active" data-section="dashboard" onclick="showSection('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </div>
+      <div class="admin-nav-section">Contenido</div>
+      <div class="admin-nav-item" data-section="courses" onclick="showSection('courses')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        Cursos Grabados
+      </div>
+      <div class="admin-nav-item" data-section="live" onclick="showSection('live')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+        Cursos en Línea
+      </div>
+      <div class="admin-nav-item" data-section="pdfs" onclick="showSection('pdfs')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Material PDF
+      </div>
+      <div class="admin-nav-section">Gestión</div>
+      <div class="admin-nav-item" data-section="members" onclick="showSection('members')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Socios
+      </div>
+      <div class="admin-nav-item" data-section="config" onclick="showSection('config')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Configuración
+      </div>
+    </div>
+    <div class="admin-sidebar-footer">
+      <div onclick="adminLogout()" style="cursor:pointer;">Cerrar sesión ↗</div>
+    </div>
+  </nav>
+
+  <main class="admin-main">
+
+    <!-- DASHBOARD -->
+    <section class="admin-section active" id="sec-dashboard">
+      <div class="admin-page-header">
+        <div><div class="admin-page-title">Dashboard</div><div class="admin-page-sub">Resumen general del Club FisioTeck</div></div>
+        <button class="btn btn-p" onclick="publishChanges()">📤 Publicar Cambios</button>
+      </div>
+      <div class="stats-row">
+        <div class="stat-box"><div class="stat-icon" style="background:rgba(10,110,92,.1);color:var(--primary);">📹</div><div class="stat-val" id="dCourses">0</div><div class="stat-lbl">Cursos Grabados</div></div>
+        <div class="stat-box"><div class="stat-icon" style="background:rgba(239,68,68,.1);color:var(--danger);">📄</div><div class="stat-val" id="dPdfs">0</div><div class="stat-lbl">PDFs</div></div>
+        <div class="stat-box"><div class="stat-icon" style="background:rgba(245,158,11,.1);color:var(--warning);">🔴</div><div class="stat-val" id="dLive">0</div><div class="stat-lbl">Clases en Línea</div></div>
+        <div class="stat-box"><div class="stat-icon" style="background:rgba(59,130,246,.1);color:var(--info);">👥</div><div class="stat-val" id="dMembers">0</div><div class="stat-lbl">Socios</div></div>
+      </div>
+      <div class="admin-card">
+        <h3>Guía rápida</h3>
+        <p style="font-size:.9rem;color:var(--text-light);line-height:1.7;">
+          Desde este panel puedes gestionar todo el contenido del Club FisioTeck.<br>
+          <strong>1.</strong> Agrega/edita cursos grabados, clases en línea y PDFs desde las secciones correspondientes.<br>
+          <strong>2.</strong> Gestiona los socios activos y sus suscripciones.<br>
+          <strong>3.</strong> Cuando termines tus cambios, presiona <strong>"📤 Publicar Cambios"</strong> para generar el archivo JSON actualizado.<br>
+          <strong>4.</strong> Sube el archivo <code>content.json</code> a tu repositorio de GitHub Pages para que los socios vean los cambios en tiempo real.
+        </p>
+      </div>
+    </section>
+
+    <!-- COURSES -->
+    <section class="admin-section" id="sec-courses">
+      <div class="admin-page-header">
+        <div><div class="admin-page-title">Cursos Grabados</div><div class="admin-page-sub">Administra la biblioteca de cursos</div></div>
+        <button class="btn btn-p" onclick="openModal('course')">+ Nuevo Curso</button>
+      </div>
+      <div class="admin-card" style="overflow-x:auto;">
+        <table class="admin-table">
+          <thead><tr><th>Título</th><th>Categoría</th><th>Duración</th><th>Fecha</th><th>Badge</th><th>Acciones</th></tr></thead>
+          <tbody id="coursesTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- LIVE -->
+    <section class="admin-section" id="sec-live">
+      <div class="admin-page-header">
+        <div><div class="admin-page-title">Cursos en Línea</div><div class="admin-page-sub">Sesiones en vivo programadas</div></div>
+        <button class="btn btn-p" onclick="openModal('live')">+ Nueva Sesión</button>
+      </div>
+      <div class="admin-card" style="overflow-x:auto;">
+        <table class="admin-table">
+          <thead><tr><th>Título</th><th>Categoría</th><th>Fecha</th><th>Hora</th><th>Enlace</th><th>Acciones</th></tr></thead>
+          <tbody id="liveTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- PDFS -->
+    <section class="admin-section" id="sec-pdfs">
+      <div class="admin-page-header">
+        <div><div class="admin-page-title">Material PDF</div><div class="admin-page-sub">Guías y recursos descargables</div></div>
+        <button class="btn btn-p" onclick="openModal('pdf')">+ Nuevo PDF</button>
+      </div>
+      <div class="admin-card" style="overflow-x:auto;">
+        <table class="admin-table">
+          <thead><tr><th>Título</th><th>Categoría</th><th>Tamaño</th><th>Fecha</th><th>URL</th><th>Acciones</th></tr></thead>
+          <tbody id="pdfsTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- MEMBERS -->
+    <section class="admin-section" id="sec-members">
+      <div class="admin-page-header">
+        <div><div class="admin-page-title">Socios</div><div class="admin-page-sub">Gestión de membresías activas</div></div>
+        <button class="btn btn-p" onclick="openModal('member')">+ Nuevo Socio</button>
+      </div>
+      <div class="admin-card" style="overflow-x:auto;">
+        <table class="admin-table">
+          <thead><tr><th>Nombre</th><th>Correo</th><th>Teléfono</th><th>Inicio</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <tbody id="membersTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- CONFIG -->
+    <section class="admin-section" id="sec-config">
+      <div class="admin-page-header">
+        <div><div class="admin-page-title">Configuración</div><div class="admin-page-sub">Ajustes generales del panel y del sitio</div></div>
+      </div>
+      <div class="config-grid">
+        <div class="admin-card">
+          <h3>Contraseña del Admin</h3>
+          <div class="form-group">
+            <label class="form-label">Contraseña actual</label>
+            <input class="form-input" type="password" id="cfgPassCurr">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nueva contraseña</label>
+            <input class="form-input" type="password" id="cfgPassNew">
+          </div>
+          <button class="btn btn-p" onclick="changeAdminPass()">Actualizar Contraseña</button>
+        </div>
+        <div class="admin-card">
+          <h3>Estadísticas del sitio</h3>
+          <p style="font-size:.85rem;color:var(--text-light);margin-bottom:12px;">Estos números se muestran en el inicio del sitio público.</p>
+          <div class="form-group">
+            <label class="form-label">Socios activos (mostrar)</label>
+            <input class="form-input" type="number" id="cfgMembers" value="87">
+          </div>
+          <button class="btn btn-p" onclick="saveConfig()">Guardar</button>
+        </div>
+        <div class="admin-card">
+          <h3>GitHub Pages</h3>
+          <p style="font-size:.85rem;color:var(--text-light);margin-bottom:12px;">Configura tu repo para publicar automáticamente.</p>
+          <div class="form-group">
+            <label class="form-label">Repositorio (ej: usuario/club-fisioteck)</label>
+            <input class="form-input" id="cfgRepo" placeholder="usuario/club-fisioteck">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Token de GitHub (Personal Access Token)</label>
+            <input class="form-input" type="password" id="cfgToken" placeholder="ghp_xxxxxxxxxxxx">
+          </div>
+          <button class="btn btn-p" onclick="saveGitConfig()">Guardar Config GitHub</button>
+        </div>
+        <div class="admin-card">
+          <h3>WhatsApp</h3>
+          <div class="form-group">
+            <label class="form-label">Número de WhatsApp (con código de país)</label>
+            <input class="form-input" id="cfgWhatsapp" placeholder="52XXXXXXXXXX">
+          </div>
+          <button class="btn btn-p" onclick="saveWhatsApp()">Guardar</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 id="modalTitle">Nuevo elemento</h3>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-o" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-p" id="modalSave" onclick="saveModalItem()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="admin-toast" id="adminToast"></div>
+
+<script>
+  // ===== ADMIN CONFIG =====
+  const ADMIN_PASS_KEY = 'clubft_admin_pass';
+  const DATA_KEY = 'clubft_data';
+  const GIT_KEY = 'clubft_git';
+  const DEFAULT_PASS = 'admin123'; // Cambiar después
+
+  // ===== DATA =====
+  let data = { stats:{courses:0,pdfs:0,live:0,members:87}, courses:[], live:[], pdfs:[], members:[] };
+  let currentModal = null;
+  let editingId = null;
+
+  function loadData() {
+    const saved = localStorage.getItem(DATA_KEY);
+    if (saved) {
+      data = JSON.parse(saved);
+    } else {
+      // Load demo data
+      data = {
+        stats: { courses:6, pdfs:5, live:3, members:87 },
+        courses: [
+          { id:1, title:"Fundamentos de Fisioterapia Deportiva", desc:"Aprende las bases del tratamiento deportivo profesional", category:"fisioterapia", duration:"2h 30min", date:"2026-04-01", badge:"Nuevo", videoUrl:"", thumbnail:"" },
+          { id:2, title:"Anatomía Funcional del Miembro Superior", desc:"Estudio detallado de la anatomía aplicada", category:"anatomia", duration:"1h 45min", date:"2026-03-28", badge:"", videoUrl:"", thumbnail:"" },
+          { id:3, title:"Rehabilitación Post-Quirúrgica de Rodilla", desc:"Protocolos actualizados de recuperación", category:"rehabilitacion", duration:"3h 10min", date:"2026-03-20", badge:"Popular", videoUrl:"", thumbnail:"" },
+          { id:4, title:"Vendaje Neuromuscular Avanzado", desc:"Técnicas de kinesiotaping para profesionales", category:"especializacion", duration:"2h 00min", date:"2026-03-15", badge:"", videoUrl:"", thumbnail:"" },
+          { id:5, title:"Electroterapia Clínica", desc:"Uso correcto de equipos de electroterapia", category:"fisioterapia", duration:"1h 50min", date:"2026-03-10", badge:"", videoUrl:"", thumbnail:"" },
+          { id:6, title:"Pilates Terapéutico", desc:"Método Pilates aplicado a la rehabilitación", category:"rehabilitacion", duration:"2h 20min", date:"2026-03-05", badge:"Nuevo", videoUrl:"", thumbnail:"" }
+        ],
+        live: [
+          { id:101, title:"Masterclass: Punción Seca", desc:"Sesión en vivo con el Dr. García", category:"especializacion", date:"2026-04-15", time:"18:00", badge:"Próximamente", link:"" },
+          { id:102, title:"Caso Clínico: Lumbalgia Crónica", desc:"Análisis en grupo", category:"rehabilitacion", date:"2026-04-20", time:"19:00", badge:"", link:"" },
+          { id:103, title:"Q&A: Fisioterapia Pediátrica", desc:"Resuelve tus dudas", category:"fisioterapia", date:"2026-04-25", time:"17:00", badge:"", link:"" }
+        ],
+        pdfs: [
+          { id:201, title:"Guía de Evaluación Postural", desc:"Manual completo — 42 páginas", category:"fisioterapia", size:"3.2 MB", date:"2026-04-01", fileUrl:"" },
+          { id:202, title:"Protocolo de Rehabilitación de Hombro", desc:"Fases de tratamiento", category:"rehabilitacion", size:"1.8 MB", date:"2026-03-28", fileUrl:"" },
+          { id:203, title:"Atlas de Anatomía Palpatoria", desc:"Referencia visual", category:"anatomia", size:"8.5 MB", date:"2026-03-20", fileUrl:"" },
+          { id:204, title:"Ejercicios Terapéuticos para Cervicalgia", desc:"Programa con ilustraciones", category:"rehabilitacion", size:"2.1 MB", date:"2026-03-15", fileUrl:"" },
+          { id:205, title:"Guía de Vendaje Funcional", desc:"Técnicas paso a paso", category:"especializacion", size:"4.7 MB", date:"2026-03-10", fileUrl:"" }
+        ],
+        members: []
+      };
+      saveData();
+    }
+  }
+  function saveData() {
+    data.stats.courses = data.courses.length;
+    data.stats.pdfs = data.pdfs.length;
+    data.stats.live = data.live.length;
+    data.stats.members = data.members.length || parseInt(document.getElementById('cfgMembers')?.value || '87');
+    localStorage.setItem(DATA_KEY, JSON.stringify(data));
+  }
+
+  // ===== AUTH =====
+  function adminLogin() {
+    const pass = document.getElementById('adminPass').value;
+    const stored = localStorage.getItem(ADMIN_PASS_KEY) || DEFAULT_PASS;
+    if (pass === stored) {
+      document.getElementById('auth-screen').classList.add('hidden');
+      sessionStorage.setItem('admin_auth', '1');
+      initAdmin();
+    } else {
+      const el = document.getElementById('adminError');
+      el.style.display = 'block';
+      setTimeout(() => el.style.display = 'none', 2000);
+    }
+  }
+  function adminLogout() { sessionStorage.removeItem('admin_auth'); location.reload(); }
+  function checkAdminAuth() {
+    if (sessionStorage.getItem('admin_auth') === '1') {
+      document.getElementById('auth-screen').classList.add('hidden');
+      return true;
+    }
+    return false;
+  }
+  function changeAdminPass() {
+    const curr = document.getElementById('cfgPassCurr').value;
+    const newP = document.getElementById('cfgPassNew').value;
+    const stored = localStorage.getItem(ADMIN_PASS_KEY) || DEFAULT_PASS;
+    if (curr !== stored) { toast('Contraseña actual incorrecta'); return; }
+    if (newP.length < 4) { toast('Mínimo 4 caracteres'); return; }
+    localStorage.setItem(ADMIN_PASS_KEY, newP);
+    toast('Contraseña actualizada');
+    document.getElementById('cfgPassCurr').value = '';
+    document.getElementById('cfgPassNew').value = '';
+  }
+
+  // ===== RENDER =====
+  function initAdmin() {
+    loadData();
+    renderDashboard();
+    renderCourses();
+    renderLive();
+    renderPdfs();
+    renderMembers();
+  }
+  function renderDashboard() {
+    document.getElementById('dCourses').textContent = data.courses.length;
+    document.getElementById('dPdfs').textContent = data.pdfs.length;
+    document.getElementById('dLive').textContent = data.live.length;
+    document.getElementById('dMembers').textContent = data.members.length || data.stats.members;
+  }
+  function renderCourses() {
+    document.getElementById('coursesTable').innerHTML = data.courses.map(c => `
+      <tr>
+        <td><strong>${c.title}</strong><br><span style="font-size:.78rem;color:var(--text-muted)">${c.desc}</span></td>
+        <td><span class="badge badge-info">${c.category}</span></td>
+        <td>${c.duration}</td>
+        <td>${c.date}</td>
+        <td>${c.badge ? `<span class="badge badge-warning">${c.badge}</span>` : '—'}</td>
+        <td>
+          <button class="btn btn-o btn-sm" onclick="editItem('course',${c.id})">Editar</button>
+          <button class="btn btn-d btn-sm" onclick="deleteItem('course',${c.id})">Eliminar</button>
+        </td>
+      </tr>
+    `).join('') || '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted);">No hay cursos aún</td></tr>';
+  }
+  function renderLive() {
+    document.getElementById('liveTable').innerHTML = data.live.map(c => `
+      <tr>
+        <td><strong>${c.title}</strong><br><span style="font-size:.78rem;color:var(--text-muted)">${c.desc}</span></td>
+        <td><span class="badge badge-info">${c.category}</span></td>
+        <td>${c.date}</td>
+        <td>${c.time}</td>
+        <td>${c.link ? `<a href="${c.link}" target="_blank" style="color:var(--primary)">Enlace</a>` : '—'}</td>
+        <td>
+          <button class="btn btn-o btn-sm" onclick="editItem('live',${c.id})">Editar</button>
+          <button class="btn btn-d btn-sm" onclick="deleteItem('live',${c.id})">Eliminar</button>
+        </td>
+      </tr>
+    `).join('') || '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted);">No hay sesiones</td></tr>';
+  }
+  function renderPdfs() {
+    document.getElementById('pdfsTable').innerHTML = data.pdfs.map(c => `
+      <tr>
+        <td><strong>${c.title}</strong><br><span style="font-size:.78rem;color:var(--text-muted)">${c.desc}</span></td>
+        <td><span class="badge badge-info">${c.category}</span></td>
+        <td>${c.size}</td>
+        <td>${c.date}</td>
+        <td>${c.fileUrl ? `<a href="${c.fileUrl}" target="_blank" style="color:var(--primary)">Ver</a>` : '—'}</td>
+        <td>
+          <button class="btn btn-o btn-sm" onclick="editItem('pdf',${c.id})">Editar</button>
+          <button class="btn btn-d btn-sm" onclick="deleteItem('pdf',${c.id})">Eliminar</button>
+        </td>
+      </tr>
+    `).join('') || '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted);">No hay PDFs</td></tr>';
+  }
+  function renderMembers() {
+    document.getElementById('membersTable').innerHTML = data.members.map(m => `
+      <tr>
+        <td><strong>${m.name}</strong></td>
+        <td>${m.email}</td>
+        <td>${m.phone || '—'}</td>
+        <td>${m.startDate}</td>
+        <td><span class="badge ${m.status==='active'?'badge-success':'badge-danger'}">${m.status==='active'?'Activo':'Inactivo'}</span></td>
+        <td>
+          <button class="btn btn-o btn-sm" onclick="editItem('member',${m.id})">Editar</button>
+          <button class="btn btn-d btn-sm" onclick="deleteItem('member',${m.id})">Eliminar</button>
+        </td>
+      </tr>
+    `).join('') || '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted);">No hay socios registrados</td></tr>';
+  }
+
+  // ===== MODALS =====
+  function openModal(type, item=null) {
+    currentModal = type;
+    editingId = item ? item.id : null;
+    const isEdit = !!item;
+    const titles = { course:'Curso Grabado', live:'Curso en Línea', pdf:'Material PDF', member:'Socio' };
+    document.getElementById('modalTitle').textContent = (isEdit?'Editar':'Nuevo') + ' ' + titles[type];
+
+    let html = '';
+    if (type === 'course') {
+      html = `
+        <div class="form-group"><label class="form-label">Título</label><input class="form-input" id="mTitle" value="${item?.title||''}"></div>
+        <div class="form-group"><label class="form-label">Descripción</label><textarea class="form-textarea" id="mDesc">${item?.desc||''}</textarea></div>
+        <div class="form-group"><label class="form-label">Categoría</label>
+          <select class="form-select" id="mCat">
+            <option value="fisioterapia" ${item?.category==='fisioterapia'?'selected':''}>Fisioterapia</option>
+            <option value="rehabilitacion" ${item?.category==='rehabilitacion'?'selected':''}>Rehabilitación</option>
+            <option value="anatomia" ${item?.category==='anatomia'?'selected':''}>Anatomía</option>
+            <option value="especializacion" ${item?.category==='especializacion'?'selected':''}>Especialización</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Duración (ej: 2h 30min)</label><input class="form-input" id="mDuration" value="${item?.duration||''}"></div>
+        <div class="form-group"><label class="form-label">URL del Video (YouTube, Vimeo, etc.)</label><input class="form-input" id="mVideoUrl" value="${item?.videoUrl||''}" placeholder="https://..."></div>
+        <div class="form-group"><label class="form-label">URL de Thumbnail</label><input class="form-input" id="mThumb" value="${item?.thumbnail||''}" placeholder="https://..."></div>
+        <div class="form-group"><label class="form-label">Badge (Nuevo, Popular, etc. — dejar vacío si no aplica)</label><input class="form-input" id="mBadge" value="${item?.badge||''}"></div>
+      `;
+    } else if (type === 'live') {
+      html = `
+        <div class="form-group"><label class="form-label">Título</label><input class="form-input" id="mTitle" value="${item?.title||''}"></div>
+        <div class="form-group"><label class="form-label">Descripción</label><textarea class="form-textarea" id="mDesc">${item?.desc||''}</textarea></div>
+        <div class="form-group"><label class="form-label">Categoría</label>
+          <select class="form-select" id="mCat">
+            <option value="fisioterapia" ${item?.category==='fisioterapia'?'selected':''}>Fisioterapia</option>
+            <option value="rehabilitacion" ${item?.category==='rehabilitacion'?'selected':''}>Rehabilitación</option>
+            <option value="anatomia" ${item?.category==='anatomia'?'selected':''}>Anatomía</option>
+            <option value="especializacion" ${item?.category==='especializacion'?'selected':''}>Especialización</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Fecha (YYYY-MM-DD)</label><input class="form-input" type="date" id="mDate" value="${item?.date||''}"></div>
+        <div class="form-group"><label class="form-label">Hora (HH:MM)</label><input class="form-input" type="time" id="mTime" value="${item?.time||''}"></div>
+        <div class="form-group"><label class="form-label">Enlace de la sesión (Zoom, Meet, etc.)</label><input class="form-input" id="mLink" value="${item?.link||''}" placeholder="https://..."></div>
+        <div class="form-group"><label class="form-label">Badge</label><input class="form-input" id="mBadge" value="${item?.badge||''}"></div>
+      `;
+    } else if (type === 'pdf') {
+      html = `
+        <div class="form-group"><label class="form-label">Título</label><input class="form-input" id="mTitle" value="${item?.title||''}"></div>
+        <div class="form-group"><label class="form-label">Descripción</label><textarea class="form-textarea" id="mDesc">${item?.desc||''}</textarea></div>
+        <div class="form-group"><label class="form-label">Categoría</label>
+          <select class="form-select" id="mCat">
+            <option value="fisioterapia" ${item?.category==='fisioterapia'?'selected':''}>Fisioterapia</option>
+            <option value="rehabilitacion" ${item?.category==='rehabilitacion'?'selected':''}>Rehabilitación</option>
+            <option value="anatomia" ${item?.category==='anatomia'?'selected':''}>Anatomía</option>
+            <option value="especializacion" ${item?.category==='especializacion'?'selected':''}>Especialización</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Tamaño (ej: 3.2 MB)</label><input class="form-input" id="mSize" value="${item?.size||''}"></div>
+        <div class="form-group"><label class="form-label">URL del PDF (Google Drive, Dropbox, etc.)</label><input class="form-input" id="mFileUrl" value="${item?.fileUrl||''}" placeholder="https://..."></div>
+      `;
+    } else if (type === 'member') {
+      html = `
+        <div class="form-group"><label class="form-label">Nombre completo</label><input class="form-input" id="mName" value="${item?.name||''}"></div>
+        <div class="form-group"><label class="form-label">Correo electrónico</label><input class="form-input" type="email" id="mEmail" value="${item?.email||''}"></div>
+        <div class="form-group"><label class="form-label">Contraseña</label><input class="form-input" id="mPass" value="${item?.password||''}" placeholder="Contraseña para iniciar sesión"></div>
+        <div class="form-group"><label class="form-label">Teléfono</label><input class="form-input" id="mPhone" value="${item?.phone||''}"></div>
+        <div class="form-group"><label class="form-label">Fecha de inicio (YYYY-MM-DD)</label><input class="form-input" type="date" id="mStartDate" value="${item?.startDate||new Date().toISOString().split('T')[0]}"></div>
+        <div class="form-group"><label class="form-label">Estado</label>
+          <select class="form-select" id="mStatus">
+            <option value="active" ${item?.status==='active'?'selected':''}>Activo</option>
+            <option value="inactive" ${item?.status==='inactive'?'selected':''}>Inactivo</option>
+          </select>
+        </div>
+      `;
+    }
+    document.getElementById('modalBody').innerHTML = html;
+    document.getElementById('modalOverlay').classList.add('active');
+  }
+  function closeModal() { document.getElementById('modalOverlay').classList.remove('active'); currentModal=null; editingId=null; }
+
+  function saveModalItem() {
+    const type = currentModal;
+    const today = new Date().toISOString().split('T')[0];
+
+    if (type === 'course') {
+      const item = {
+        id: editingId || Date.now(),
+        title: document.getElementById('mTitle').value,
+        desc: document.getElementById('mDesc').value,
+        category: document.getElementById('mCat').value,
+        duration: document.getElementById('mDuration').value,
+        date: today,
+        badge: document.getElementById('mBadge').value,
+        videoUrl: document.getElementById('mVideoUrl').value,
+        thumbnail: document.getElementById('mThumb').value
+      };
+      if (!item.title) { toast('El título es obligatorio'); return; }
+      if (editingId) { const idx = data.courses.findIndex(c=>c.id===editingId); if(idx>=0) data.courses[idx]=item; }
+      else data.courses.unshift(item);
+      saveData(); renderCourses(); renderDashboard();
+    } else if (type === 'live') {
+      const item = {
+        id: editingId || Date.now(),
+        title: document.getElementById('mTitle').value,
+        desc: document.getElementById('mDesc').value,
+        category: document.getElementById('mCat').value,
+        date: document.getElementById('mDate').value,
+        time: document.getElementById('mTime').value,
+        badge: document.getElementById('mBadge').value,
+        link: document.getElementById('mLink').value
+      };
+      if (!item.title) { toast('El título es obligatorio'); return; }
+      if (editingId) { const idx = data.live.findIndex(c=>c.id===editingId); if(idx>=0) data.live[idx]=item; }
+      else data.live.unshift(item);
+      saveData(); renderLive(); renderDashboard();
+    } else if (type === 'pdf') {
+      const item = {
+        id: editingId || Date.now(),
+        title: document.getElementById('mTitle').value,
+        desc: document.getElementById('mDesc').value,
+        category: document.getElementById('mCat').value,
+        size: document.getElementById('mSize').value,
+        date: today,
+        fileUrl: document.getElementById('mFileUrl').value
+      };
+      if (!item.title) { toast('El título es obligatorio'); return; }
+      if (editingId) { const idx = data.pdfs.findIndex(c=>c.id===editingId); if(idx>=0) data.pdfs[idx]=item; }
+      else data.pdfs.unshift(item);
+      saveData(); renderPdfs(); renderDashboard();
+    } else if (type === 'member') {
+      const item = {
+        id: editingId || Date.now(),
+        name: document.getElementById('mName').value,
+        email: document.getElementById('mEmail').value,
+        password: document.getElementById('mPass').value,
+        phone: document.getElementById('mPhone').value,
+        startDate: document.getElementById('mStartDate').value,
+        status: document.getElementById('mStatus').value
+      };
+      if (!item.name || !item.email) { toast('Nombre y correo son obligatorios'); return; }
+      if (editingId) { const idx = data.members.findIndex(m=>m.id===editingId); if(idx>=0) data.members[idx]=item; }
+      else data.members.unshift(item);
+      saveData(); renderMembers(); renderDashboard();
+    }
+    closeModal();
+    toast('Guardado correctamente');
+  }
+
+  function editItem(type, id) {
+    const lists = { course:'courses', live:'live', pdf:'pdfs', member:'members' };
+    const item = data[lists[type]].find(i => i.id === id);
+    if (item) openModal(type, item);
+  }
+  function deleteItem(type, id) {
+    if (!confirm('¿Eliminar este elemento?')) return;
+    const lists = { course:'courses', live:'live', pdf:'pdfs', member:'members' };
+    data[lists[type]] = data[lists[type]].filter(i => i.id !== id);
+    saveData();
+    if (type==='course') renderCourses();
+    else if (type==='live') renderLive();
+    else if (type==='pdf') renderPdfs();
+    else if (type==='member') renderMembers();
+    renderDashboard();
+    toast('Eliminado');
+  }
+
+  // ===== PUBLISH =====
+  function publishChanges() {
+    // Generate JSON for download
+    const exportData = {
+      stats: { ...data.stats, members: parseInt(document.getElementById('cfgMembers')?.value || data.stats.members) },
+      courses: data.courses.map(c => ({...c, type:'video'})),
+      live: data.live.map(c => ({...c, type:'live'})),
+      pdfs: data.pdfs.map(c => ({...c, type:'pdf'})),
+      members: data.members
+    };
+    const json = JSON.stringify(exportData, null, 2);
+
+    // Try GitHub API first
+    const gitConfig = JSON.parse(localStorage.getItem(GIT_KEY) || '{}');
+    if (gitConfig.repo && gitConfig.token) {
+      publishToGitHub(gitConfig, json);
+    } else {
+      // Download as file
+      const blob = new Blob([json], { type:'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'content.json';
+      a.click(); URL.revokeObjectURL(url);
+      toast('Archivo content.json descargado — súbelo a tu repo en la carpeta data/');
+    }
+  }
+
+  async function publishToGitHub(config, content) {
+    try {
+      toast('Publicando en GitHub...');
+      const path = 'data/content.json';
+      const url = `https://api.github.com/repos/${config.repo}/contents/${path}`;
+
+      // Get current file SHA
+      let sha = '';
+      try {
+        const getRes = await fetch(url, { headers:{ 'Authorization':`token ${config.token}` } });
+        if (getRes.ok) { const d = await getRes.json(); sha = d.sha; }
+      } catch(e) {}
+
+      const body = {
+        message: 'Actualizar contenido del Club FisioTeck',
+        content: btoa(unescape(encodeURIComponent(content))),
+        ...(sha && { sha })
+      };
+      const res = await fetch(url, {
+        method:'PUT',
+        headers:{ 'Authorization':`token ${config.token}`, 'Content-Type':'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (res.ok) {
+        toast('¡Publicado en GitHub exitosamente! Los cambios se verán en minutos.');
+      } else {
+        toast('Error al publicar en GitHub — revisa tu token y repo');
+      }
+    } catch(e) {
+      toast('Error de conexión con GitHub');
+    }
+  }
+
+  // ===== CONFIG SAVES =====
+  function saveConfig() {
+    data.stats.members = parseInt(document.getElementById('cfgMembers').value) || 0;
+    saveData(); renderDashboard();
+    toast('Estadísticas actualizadas');
+  }
+  function saveGitConfig() {
+    const config = { repo:document.getElementById('cfgRepo').value, token:document.getElementById('cfgToken').value };
+    localStorage.setItem(GIT_KEY, JSON.stringify(config));
+    toast('Configuración de GitHub guardada');
+  }
+  function saveWhatsApp() {
+    toast('Número de WhatsApp guardado: ' + document.getElementById('cfgWhatsapp').value);
+  }
+
+  // ===== NAV =====
+  function showSection(sec) {
+    document.querySelectorAll('.admin-section').forEach(s=>s.classList.remove('active'));
+    document.getElementById('sec-'+sec).classList.add('active');
+    document.querySelectorAll('.admin-nav-item').forEach(n=>n.classList.remove('active'));
+    document.querySelector(`.admin-nav-item[data-section="${sec}"]`).classList.add('active');
+    if (window.innerWidth<=768) toggleAdminSidebar();
+  }
+  function toggleAdminSidebar() {
+    document.getElementById('adminSidebar').classList.toggle('open');
+    document.getElementById('adminOverlay').classList.toggle('open');
+  }
+
+  // ===== UTILS =====
+  function toast(msg) {
+    const t = document.getElementById('adminToast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'), 3000);
+  }
+
+  // ===== INIT =====
+  document.addEventListener('DOMContentLoaded', () => {
+    if (checkAdminAuth()) initAdmin();
+    document.getElementById('adminPass').addEventListener('keypress', e => { if(e.key==='Enter') adminLogin(); });
+  });
+</script>
+
+<!-- MODIFICADO: Panel Admin Club FisioTeck — creado desde cero -->
+</body>
+</html>
