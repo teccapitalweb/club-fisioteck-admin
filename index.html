@@ -576,6 +576,47 @@
     `).join('') || '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted);">No hay socios registrados</td></tr>';
   }
 
+  // ===== CATEGORY HELPER =====
+  function getCustomCategories() {
+    const all = [...data.courses, ...data.live, ...data.pdfs];
+    const defaults = ['fisioterapia','rehabilitacion','anatomia','especializacion'];
+    const custom = [...new Set(all.map(i => i.category).filter(c => c && !defaults.includes(c)))];
+    return custom;
+  }
+  function categoryFieldHTML(selected) {
+    const defaults = [
+      {value:'fisioterapia', label:'Fisioterapia'},
+      {value:'rehabilitacion', label:'Rehabilitación'},
+      {value:'anatomia', label:'Anatomía'},
+      {value:'especializacion', label:'Especialización'}
+    ];
+    const custom = getCustomCategories();
+    const isCustom = selected && !defaults.find(d => d.value === selected) && selected !== '';
+    let opts = defaults.map(d => `<option value="${d.value}" ${selected===d.value?'selected':''}>${d.label}</option>`).join('');
+    custom.forEach(c => { opts += `<option value="${c}" ${selected===c?'selected':''}>${c.charAt(0).toUpperCase()+c.slice(1)}</option>`; });
+    opts += `<option value="__custom__" ${isCustom && !custom.includes(selected)?'selected':''}>+ Otra categoría...</option>`;
+    return `
+      <select class="form-select" id="mCat" onchange="toggleCustomCat()">
+        ${opts}
+      </select>
+      <input class="form-input" id="mCatCustom" placeholder="Escribe la nueva categoría" style="display:${isCustom && !custom.includes(selected)?'block':'none'};margin-top:8px;" value="${isCustom && !custom.includes(selected)?selected:''}">
+    `;
+  }
+  function toggleCustomCat() {
+    const sel = document.getElementById('mCat');
+    const inp = document.getElementById('mCatCustom');
+    inp.style.display = sel.value === '__custom__' ? 'block' : 'none';
+    if (sel.value !== '__custom__') inp.value = '';
+  }
+  function getCatValue() {
+    const sel = document.getElementById('mCat').value;
+    if (sel === '__custom__') {
+      const custom = document.getElementById('mCatCustom').value.trim().toLowerCase().replace(/\s+/g,'-');
+      return custom || 'general';
+    }
+    return sel;
+  }
+
   // ===== MODALS =====
   function openModal(type, item=null) {
     currentModal = type;
@@ -590,16 +631,11 @@
         <div class="form-group"><label class="form-label">Título</label><input class="form-input" id="mTitle" value="${item?.title||''}"></div>
         <div class="form-group"><label class="form-label">Descripción</label><textarea class="form-textarea" id="mDesc">${item?.desc||''}</textarea></div>
         <div class="form-group"><label class="form-label">Categoría</label>
-          <select class="form-select" id="mCat">
-            <option value="fisioterapia" ${item?.category==='fisioterapia'?'selected':''}>Fisioterapia</option>
-            <option value="rehabilitacion" ${item?.category==='rehabilitacion'?'selected':''}>Rehabilitación</option>
-            <option value="anatomia" ${item?.category==='anatomia'?'selected':''}>Anatomía</option>
-            <option value="especializacion" ${item?.category==='especializacion'?'selected':''}>Especialización</option>
-          </select>
+          ${categoryFieldHTML(item?.category||'')}
         </div>
         <div class="form-group"><label class="form-label">Duración (ej: 2h 30min)</label><input class="form-input" id="mDuration" value="${item?.duration||''}"></div>
-        <div class="form-group"><label class="form-label">URL del Video (YouTube, Vimeo, etc.)</label><input class="form-input" id="mVideoUrl" value="${item?.videoUrl||''}" placeholder="https://..."></div>
-        <div class="form-group"><label class="form-label">URL de Thumbnail</label><input class="form-input" id="mThumb" value="${item?.thumbnail||''}" placeholder="https://..."></div>
+        <div class="form-group"><label class="form-label">URL del Video (Google Drive, YouTube o Vimeo)</label><input class="form-input" id="mVideoUrl" value="${item?.videoUrl||''}" placeholder="https://drive.google.com/file/d/.../view"><p style="font-size:.72rem;color:var(--text-muted);margin-top:4px;">Sube el video a Drive → clic derecho → Compartir → "Cualquier persona con el enlace" → Copia el enlace</p></div>
+        <div class="form-group"><label class="form-label">URL de Thumbnail (imagen de portada)</label><input class="form-input" id="mThumb" value="${item?.thumbnail||''}" placeholder="https://drive.google.com/file/d/.../view"><p style="font-size:.72rem;color:var(--text-muted);margin-top:4px;">Sube una imagen a Drive → compártela igual → pega el enlace aquí</p></div>
         <div class="form-group"><label class="form-label">Badge (Nuevo, Popular, etc. — dejar vacío si no aplica)</label><input class="form-input" id="mBadge" value="${item?.badge||''}"></div>
       `;
     } else if (type === 'live') {
@@ -607,12 +643,7 @@
         <div class="form-group"><label class="form-label">Título</label><input class="form-input" id="mTitle" value="${item?.title||''}"></div>
         <div class="form-group"><label class="form-label">Descripción</label><textarea class="form-textarea" id="mDesc">${item?.desc||''}</textarea></div>
         <div class="form-group"><label class="form-label">Categoría</label>
-          <select class="form-select" id="mCat">
-            <option value="fisioterapia" ${item?.category==='fisioterapia'?'selected':''}>Fisioterapia</option>
-            <option value="rehabilitacion" ${item?.category==='rehabilitacion'?'selected':''}>Rehabilitación</option>
-            <option value="anatomia" ${item?.category==='anatomia'?'selected':''}>Anatomía</option>
-            <option value="especializacion" ${item?.category==='especializacion'?'selected':''}>Especialización</option>
-          </select>
+          ${categoryFieldHTML(item?.category||'')}
         </div>
         <div class="form-group"><label class="form-label">Fecha (YYYY-MM-DD)</label><input class="form-input" type="date" id="mDate" value="${item?.date||''}"></div>
         <div class="form-group"><label class="form-label">Hora (HH:MM)</label><input class="form-input" type="time" id="mTime" value="${item?.time||''}"></div>
@@ -624,15 +655,10 @@
         <div class="form-group"><label class="form-label">Título</label><input class="form-input" id="mTitle" value="${item?.title||''}"></div>
         <div class="form-group"><label class="form-label">Descripción</label><textarea class="form-textarea" id="mDesc">${item?.desc||''}</textarea></div>
         <div class="form-group"><label class="form-label">Categoría</label>
-          <select class="form-select" id="mCat">
-            <option value="fisioterapia" ${item?.category==='fisioterapia'?'selected':''}>Fisioterapia</option>
-            <option value="rehabilitacion" ${item?.category==='rehabilitacion'?'selected':''}>Rehabilitación</option>
-            <option value="anatomia" ${item?.category==='anatomia'?'selected':''}>Anatomía</option>
-            <option value="especializacion" ${item?.category==='especializacion'?'selected':''}>Especialización</option>
-          </select>
+          ${categoryFieldHTML(item?.category||'')}
         </div>
         <div class="form-group"><label class="form-label">Tamaño (ej: 3.2 MB)</label><input class="form-input" id="mSize" value="${item?.size||''}"></div>
-        <div class="form-group"><label class="form-label">URL del PDF (Google Drive, Dropbox, etc.)</label><input class="form-input" id="mFileUrl" value="${item?.fileUrl||''}" placeholder="https://..."></div>
+        <div class="form-group"><label class="form-label">URL del PDF (Google Drive)</label><input class="form-input" id="mFileUrl" value="${item?.fileUrl||''}" placeholder="https://drive.google.com/file/d/.../view"><p style="font-size:.72rem;color:var(--text-muted);margin-top:4px;">Sube el PDF a Drive → clic derecho → Compartir → "Cualquier persona con el enlace" → Copia el enlace</p></div>
       `;
     } else if (type === 'member') {
       html = `
@@ -663,7 +689,7 @@
         id: editingId || Date.now(),
         title: document.getElementById('mTitle').value,
         desc: document.getElementById('mDesc').value,
-        category: document.getElementById('mCat').value,
+        category: getCatValue(),
         duration: document.getElementById('mDuration').value,
         date: today,
         badge: document.getElementById('mBadge').value,
@@ -679,7 +705,7 @@
         id: editingId || Date.now(),
         title: document.getElementById('mTitle').value,
         desc: document.getElementById('mDesc').value,
-        category: document.getElementById('mCat').value,
+        category: getCatValue(),
         date: document.getElementById('mDate').value,
         time: document.getElementById('mTime').value,
         badge: document.getElementById('mBadge').value,
@@ -694,7 +720,7 @@
         id: editingId || Date.now(),
         title: document.getElementById('mTitle').value,
         desc: document.getElementById('mDesc').value,
-        category: document.getElementById('mCat').value,
+        category: getCatValue(),
         size: document.getElementById('mSize').value,
         date: today,
         fileUrl: document.getElementById('mFileUrl').value
