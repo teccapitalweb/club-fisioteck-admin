@@ -718,6 +718,7 @@
         <div class="form-group"><label class="form-label">Fecha (YYYY-MM-DD)</label><input class="form-input" type="date" id="mDate" value="${item?.date||''}"></div>
         <div class="form-group"><label class="form-label">Hora (HH:MM)</label><input class="form-input" type="time" id="mTime" value="${item?.time||''}"></div>
         <div class="form-group"><label class="form-label">Enlace de la sesión (Zoom, Meet, etc.)</label><input class="form-input" id="mLink" value="${item?.link||''}" placeholder="https://..."></div>
+        <div class="form-group"><label class="form-label">URL de Thumbnail (imagen de portada)</label><input class="form-input" id="mThumb" value="${item?.thumbnail||''}" placeholder="https://drive.google.com/file/d/.../view"><p style="font-size:.72rem;color:var(--text-muted);margin-top:4px;">Sube una imagen a Drive → compártela → pega el enlace aquí</p></div>
         <div class="form-group"><label class="form-label">Badge</label><input class="form-input" id="mBadge" value="${item?.badge||''}"></div>
       `;
     } else if (type === 'pdf') {
@@ -729,6 +730,7 @@
         </div>
         <div class="form-group"><label class="form-label">Tamaño (ej: 3.2 MB)</label><input class="form-input" id="mSize" value="${item?.size||''}"></div>
         <div class="form-group"><label class="form-label">URL del PDF (Google Drive)</label><input class="form-input" id="mFileUrl" value="${item?.fileUrl||''}" placeholder="https://drive.google.com/file/d/.../view"><p style="font-size:.72rem;color:var(--text-muted);margin-top:4px;">Sube el PDF a Drive → clic derecho → Compartir → "Cualquier persona con el enlace" → Copia el enlace</p></div>
+        <div class="form-group"><label class="form-label">URL de Thumbnail (imagen de portada)</label><input class="form-input" id="mThumb" value="${item?.thumbnail||''}" placeholder="https://drive.google.com/file/d/.../view"><p style="font-size:.72rem;color:var(--text-muted);margin-top:4px;">Sube una imagen a Drive → compártela → pega el enlace aquí</p></div>
       `;
     } else if (type === 'member') {
       html = `
@@ -779,7 +781,8 @@
         date: document.getElementById('mDate').value,
         time: document.getElementById('mTime').value,
         badge: document.getElementById('mBadge').value,
-        link: document.getElementById('mLink').value
+        link: document.getElementById('mLink').value,
+        thumbnail: document.getElementById('mThumb').value
       };
       if (!item.title) { toast('El título es obligatorio'); return; }
       if (editingId) { const idx = data.live.findIndex(c=>c.id===editingId); if(idx>=0) data.live[idx]=item; }
@@ -793,7 +796,8 @@
         category: getCatValue(),
         size: document.getElementById('mSize').value,
         date: today,
-        fileUrl: document.getElementById('mFileUrl').value
+        fileUrl: document.getElementById('mFileUrl').value,
+        thumbnail: document.getElementById('mThumb').value
       };
       if (!item.title) { toast('El título es obligatorio'); return; }
       if (editingId) { const idx = data.pdfs.findIndex(c=>c.id===editingId); if(idx>=0) data.pdfs[idx]=item; }
