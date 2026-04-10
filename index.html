@@ -195,6 +195,22 @@
       .stats-row { grid-template-columns:1fr 1fr; }
     }
   </style>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyD_0EUrupGl0YinXQBb0FjOuVX3-MEc_MM",
+      authDomain: "club-fisioteck.firebaseapp.com",
+      projectId: "club-fisioteck",
+      storageBucket: "club-fisioteck.firebasestorage.app",
+      messagingSenderId: "392428159347",
+      appId: "1:392428159347:web:15431483da25c545850506"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const fbDb = firebase.firestore();
+  </script>
 </head>
 <body>
 
@@ -507,14 +523,14 @@
     renderCourses();
     renderLive();
     renderPdfs();
-    renderMembers();
+    loadFirebaseMembers();
     loadGitConfig();
   }
   function renderDashboard() {
     document.getElementById('dCourses').textContent = data.courses.length;
     document.getElementById('dPdfs').textContent = data.pdfs.length;
     document.getElementById('dLive').textContent = data.live.length;
-    document.getElementById('dMembers').textContent = data.members.length || data.stats.members;
+    document.getElementById('dMembers').textContent = firebaseMembers.length || data.stats.members;
   }
   function renderCourses() {
     document.getElementById('coursesTable').innerHTML = data.courses.map(c => `
@@ -561,20 +577,73 @@
       </tr>
     `).join('') || '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted);">No hay PDFs</td></tr>';
   }
+  let firebaseMembers = [];
+  async function loadFirebaseMembers() {
+    try {
+      const snapshot = await fbDb.collection('members').orderBy('createdAt','desc').get();
+      firebaseMembers = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
+    } catch(e) {
+      firebaseMembers = [];
+    }
+    renderMembers();
+    renderDashboard();
+  }
   function renderMembers() {
-    document.getElementById('membersTable').innerHTML = data.members.map(m => `
+    const members = firebaseMembers;
+    document.getElementById('membersTable').innerHTML = members.map(m => `
       <tr>
-        <td><strong>${m.name}</strong></td>
-        <td>${m.email}</td>
+        <td><strong>${m.name || '—'}</strong></td>
+        <td>${m.email || '—'}</td>
         <td>${m.phone || '—'}</td>
-        <td>${m.startDate}</td>
+        <td>${m.startDate || '—'}</td>
         <td><span class="badge ${m.status==='active'?'badge-success':'badge-danger'}">${m.status==='active'?'Activo':'Inactivo'}</span></td>
         <td>
-          <button class="btn btn-o btn-sm" onclick="editItem('member',${m.id})">Editar</button>
-          <button class="btn btn-d btn-sm" onclick="deleteItem('member',${m.id})">Eliminar</button>
+          <button class="btn btn-o btn-sm" onclick="editFirebaseMember('${m.uid}')">Editar</button>
+          <button class="btn btn-${m.status==='active'?'w':'p'} btn-sm" onclick="toggleMemberStatus('${m.uid}','${m.status}')">${m.status==='active'?'Desactivar':'Activar'}</button>
         </td>
       </tr>
     `).join('') || '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted);">No hay socios registrados</td></tr>';
+  }
+  async function editFirebaseMember(uid) {
+    const m = firebaseMembers.find(x => x.uid === uid);
+    if (!m) return;
+    const html = `
+      <div class="form-group"><label class="form-label">Nombre</label><input class="form-input" id="mfName" value="${m.name||''}"></div>
+      <div class="form-group"><label class="form-label">Teléfono</label><input class="form-input" id="mfPhone" value="${m.phone||''}"></div>
+      <div class="form-group"><label class="form-label">Especialidad</label><input class="form-input" id="mfSpecialty" value="${m.specialty||''}"></div>
+      <div class="form-group"><label class="form-label">Estado</label>
+        <select class="form-select" id="mfStatus">
+          <option value="active" ${m.status==='active'?'selected':''}>Activo</option>
+          <option value="inactive" ${m.status==='inactive'?'selected':''}>Inactivo</option>
+        </select>
+      </div>
+    `;
+    document.getElementById('modalTitle').textContent = 'Editar Socio';
+    document.getElementById('modalBody').innerHTML = html;
+    document.getElementById('modalSave').onclick = async () => {
+      try {
+        await fbDb.collection('members').doc(uid).update({
+          name: document.getElementById('mfName').value,
+          phone: document.getElementById('mfPhone').value,
+          specialty: document.getElementById('mfSpecialty').value,
+          status: document.getElementById('mfStatus').value
+        });
+        toast('Socio actualizado');
+        closeModal();
+        loadFirebaseMembers();
+      } catch(e) { toast('Error al actualizar'); }
+    };
+    document.getElementById('modalOverlay').classList.add('active');
+  }
+  async function toggleMemberStatus(uid, currentStatus) {
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    const action = newStatus === 'active' ? 'activar' : 'desactivar';
+    if (!confirm(`¿Seguro que deseas ${action} a este socio?`)) return;
+    try {
+      await fbDb.collection('members').doc(uid).update({ status: newStatus });
+      toast(`Socio ${newStatus === 'active' ? 'activado' : 'desactivado'}`);
+      loadFirebaseMembers();
+    } catch(e) { toast('Error al actualizar estado'); }
   }
 
   // ===== CATEGORY HELPER =====
