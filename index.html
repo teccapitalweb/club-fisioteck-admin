@@ -508,6 +508,7 @@
     renderLive();
     renderPdfs();
     renderMembers();
+    loadGitConfig();
   }
   function renderDashboard() {
     document.getElementById('dCourses').textContent = data.courses.length;
@@ -836,6 +837,12 @@
     const config = { repo:document.getElementById('cfgRepo').value, token:document.getElementById('cfgToken').value };
     localStorage.setItem(GIT_KEY, JSON.stringify(config));
     toast('Configuración de GitHub guardada');
+  }
+  function loadGitConfig() {
+    const saved = JSON.parse(localStorage.getItem(GIT_KEY) || 'null');
+    const config = saved || { repo:'teccapitalweb/club-fisioteck', token:'' };
+    document.getElementById('cfgRepo').value = config.repo || '';
+    document.getElementById('cfgToken').value = config.token || '';
   }
   function saveWhatsApp() {
     toast('Número de WhatsApp guardado: ' + document.getElementById('cfgWhatsapp').value);
