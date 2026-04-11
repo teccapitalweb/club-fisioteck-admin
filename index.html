@@ -366,9 +366,39 @@
     <!-- NOTIFICATIONS -->
     <section class="admin-section" id="sec-notifications">
       <div class="admin-page-header">
-        <div><div class="admin-page-title">Notificaciones</div><div class="admin-page-sub">Avisos de cancelaciones, pagos fallidos y alertas del sistema</div></div>
+        <div><div class="admin-page-title">Notificaciones</div><div class="admin-page-sub">Avisos del sistema y envío de alertas a miembros</div></div>
         <button class="btn btn-p" onclick="markAllRead()">Marcar todo como leído</button>
       </div>
+
+      <!-- Send notification to members -->
+      <div class="admin-card" style="margin-bottom:24px;border-left:4px solid var(--info);">
+        <h3 style="margin-bottom:16px;">📢 Enviar notificación a miembros</h3>
+        <div class="form-group">
+          <label class="form-label">Categoría</label>
+          <select class="form-input" id="notifCategory">
+            <option value="course">📚 Nuevo curso</option>
+            <option value="live">🔴 Clase en vivo</option>
+            <option value="pdf">📄 Nuevo material PDF</option>
+            <option value="promo">🎉 Promoción</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Título</label>
+          <input class="form-input" id="notifTitle" placeholder="Ej: Nuevo curso de Rehabilitación Deportiva">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mensaje</label>
+          <textarea class="form-input" id="notifMessage" rows="3" placeholder="Descripción breve de la notificación..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Link (opcional)</label>
+          <input class="form-input" id="notifLink" placeholder="Ej: https://...">
+        </div>
+        <button class="btn btn-p" onclick="sendMemberNotification()">Enviar Notificación</button>
+      </div>
+
+      <!-- System notifications (cancellations, etc) -->
+      <h3 style="margin-bottom:16px;">Historial de alertas del sistema</h3>
       <div id="notifList" style="display:flex;flex-direction:column;gap:12px;">
         <div style="text-align:center;padding:40px;color:var(--text-muted);">Cargando notificaciones...</div>
       </div>
@@ -1021,6 +1051,32 @@
       toast('Notificaciones marcadas como leídas');
       loadNotifications();
     } catch(e) { toast('Error al actualizar'); }
+  }
+
+  async function sendMemberNotification() {
+    const category = document.getElementById('notifCategory').value;
+    const title = document.getElementById('notifTitle').value.trim();
+    const message = document.getElementById('notifMessage').value.trim();
+    const link = document.getElementById('notifLink').value.trim();
+
+    if (!title || !message) { toast('Completa el título y mensaje'); return; }
+
+    try {
+      await fbDb.collection('member_notifications').add({
+        category: category,
+        title: title,
+        message: message,
+        link: link || '',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      toast('Notificación enviada a todos los miembros');
+      document.getElementById('notifTitle').value = '';
+      document.getElementById('notifMessage').value = '';
+      document.getElementById('notifLink').value = '';
+    } catch(e) {
+      toast('Error al enviar notificación');
+      console.error(e);
+    }
   }
 
   // ===== INIT =====
