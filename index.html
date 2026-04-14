@@ -260,6 +260,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
         Material PDF
       </div>
+      <div class="admin-nav-item" data-section="news" onclick="showSection('news')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1m2 13a2 2 0 0 1-2-2V7m2 13a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2"/></svg>
+        Noticias
+      </div>
       <div class="admin-nav-section">Gestión</div>
       <div class="admin-nav-item" data-section="members" onclick="showSection('members')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -363,6 +367,20 @@
     </section>
 
     <!-- CONFIG -->
+    <!-- NEWS -->
+    <section class="admin-section" id="sec-news">
+      <div class="admin-page-header">
+        <div><div class="admin-page-title">Noticias y Blog</div><div class="admin-page-sub">Publica artículos, tips y novedades</div></div>
+        <button class="btn btn-p" onclick="openModal('news')">+ Nueva Noticia</button>
+      </div>
+      <div class="admin-card" style="overflow-x:auto;">
+        <table class="admin-table">
+          <thead><tr><th>Título</th><th>Categoría</th><th>Fecha</th><th>Acciones</th></tr></thead>
+          <tbody id="newsTable"></tbody>
+        </table>
+      </div>
+    </section>
+
     <!-- NOTIFICATIONS -->
     <section class="admin-section" id="sec-notifications">
       <div class="admin-page-header">
@@ -520,6 +538,7 @@
       };
       saveData();
     }
+    if (!data.news) data.news = [];
   }
   function saveData() {
     data.stats.courses = data.courses.length;
@@ -570,6 +589,7 @@
     renderCourses();
     renderLive();
     renderPdfs();
+    renderNewsList();
     loadFirebaseMembers();
     loadGitConfig();
     loadNotifications();
@@ -626,6 +646,20 @@
         </td>
       </tr>
     `).join('') || '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted);">No hay PDFs</td></tr>';
+  }
+  function renderNewsList() {
+    const news = data.news || [];
+    document.getElementById('newsTable').innerHTML = news.map(n => `
+      <tr>
+        <td><strong>${n.title}</strong><br><span style="font-size:.78rem;color:var(--text-muted)">${(n.excerpt||'').substring(0,60)}${n.excerpt&&n.excerpt.length>60?'...':''}</span></td>
+        <td><span class="badge badge-info">${n.category||'Noticias'}</span></td>
+        <td>${n.date}</td>
+        <td>
+          <button class="btn btn-o btn-sm" onclick="editItem('news',${n.id})">Editar</button>
+          <button class="btn btn-d btn-sm" onclick="deleteItem('news',${n.id})">Eliminar</button>
+        </td>
+      </tr>
+    `).join('') || '<tr><td colspan="4" style="text-align:center;padding:30px;color:var(--text-muted);">No hay noticias</td></tr>';
   }
   let firebaseMembers = [];
   async function loadFirebaseMembers() {
@@ -742,7 +776,7 @@
     currentModal = type;
     editingId = item ? item.id : null;
     const isEdit = !!item;
-    const titles = { course:'Curso Grabado', live:'Webinar', pdf:'Material PDF', member:'Socio' };
+    const titles = { course:'Curso Grabado', live:'Webinar', pdf:'Material PDF', news:'Noticia', member:'Socio' };
     document.getElementById('modalTitle').textContent = (isEdit?'Editar':'Nuevo') + ' ' + titles[type];
 
     let html = '';
@@ -809,6 +843,22 @@
         <div class="form-group"><label class="form-label">Tamaño (ej: 3.2 MB)</label><input class="form-input" id="mSize" value="${item?.size||''}"></div>
         <div class="form-group"><label class="form-label">URL del PDF (Google Drive)</label><input class="form-input" id="mFileUrl" value="${item?.fileUrl||''}" placeholder="https://drive.google.com/file/d/.../view"><p style="font-size:.72rem;color:var(--text-muted);margin-top:4px;">Sube el PDF a Drive → clic derecho → Compartir → "Cualquier persona con el enlace" → Copia el enlace</p></div>
         <div class="form-group"><label class="form-label">URL de Thumbnail (imagen de portada)</label><input class="form-input" id="mThumb" value="${item?.thumbnail||''}" placeholder="https://drive.google.com/file/d/.../view"><p style="font-size:.72rem;color:var(--text-muted);margin-top:4px;">Sube una imagen a Drive → compártela → pega el enlace aquí</p></div>
+      `;
+    } else if (type === 'news') {
+      html = `
+        <div class="form-group"><label class="form-label">Título</label><input class="form-input" id="mTitle" value="${item?.title||''}"></div>
+        <div class="form-group"><label class="form-label">Extracto (resumen corto)</label><textarea class="form-textarea" id="mExcerpt" rows="2">${item?.excerpt||''}</textarea></div>
+        <div class="form-group"><label class="form-label">Contenido del artículo</label><textarea class="form-textarea" id="mContent" rows="8" style="min-height:200px;">${item?.content||''}</textarea><p style="font-size:.72rem;color:var(--text-muted);margin-top:4px;">Usa saltos de línea para separar párrafos.</p></div>
+        <div class="form-group"><label class="form-label">Categoría</label>
+          <select class="form-select" id="mNewsCat">
+            <option value="Noticias" ${item?.category==='Noticias'?'selected':''}>Noticias</option>
+            <option value="Artículos" ${item?.category==='Artículos'?'selected':''}>Artículos</option>
+            <option value="Tips" ${item?.category==='Tips'?'selected':''}>Tips</option>
+            <option value="Casos clínicos" ${item?.category==='Casos clínicos'?'selected':''}>Casos clínicos</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Imagen de portada (Google Drive)</label><input class="form-input" id="mThumb" value="${item?.thumbnail||''}" placeholder="https://drive.google.com/file/d/.../view"></div>
+        <div class="form-group"><label class="form-label">Link externo (opcional — si redirige a otro sitio)</label><input class="form-input" id="mExtLink" value="${item?.externalLink||''}" placeholder="https://..."></div>
       `;
     } else if (type === 'member') {
       html = `
@@ -915,6 +965,22 @@
       if (editingId) { const idx = data.pdfs.findIndex(c=>c.id===editingId); if(idx>=0) data.pdfs[idx]=item; }
       else data.pdfs.unshift(item);
       saveData(); renderPdfs(); renderDashboard();
+    } else if (type === 'news') {
+      const item = {
+        id: editingId || Date.now(),
+        title: document.getElementById('mTitle').value,
+        excerpt: document.getElementById('mExcerpt').value,
+        content: document.getElementById('mContent').value,
+        category: document.getElementById('mNewsCat').value,
+        thumbnail: document.getElementById('mThumb').value,
+        externalLink: document.getElementById('mExtLink').value,
+        date: new Date().toISOString().split('T')[0]
+      };
+      if (!item.title) { toast('El título es obligatorio'); return; }
+      if (!data.news) data.news = [];
+      if (editingId) { const idx = data.news.findIndex(c=>c.id===editingId); if(idx>=0) data.news[idx]=item; }
+      else data.news.unshift(item);
+      saveData(); renderNewsList(); renderDashboard();
     } else if (type === 'member') {
       const item = {
         id: editingId || Date.now(),
@@ -935,18 +1001,20 @@
   }
 
   function editItem(type, id) {
-    const lists = { course:'courses', live:'live', pdf:'pdfs', member:'members' };
-    const item = data[lists[type]].find(i => i.id === id);
+    const lists = { course:'courses', live:'live', pdf:'pdfs', news:'news', member:'members' };
+    const list = data[lists[type]] || [];
+    const item = list.find(i => i.id === id);
     if (item) openModal(type, item);
   }
   function deleteItem(type, id) {
     if (!confirm('¿Eliminar este elemento?')) return;
-    const lists = { course:'courses', live:'live', pdf:'pdfs', member:'members' };
-    data[lists[type]] = data[lists[type]].filter(i => i.id !== id);
+    const lists = { course:'courses', live:'live', pdf:'pdfs', news:'news', member:'members' };
+    data[lists[type]] = (data[lists[type]] || []).filter(i => i.id !== id);
     saveData();
     if (type==='course') renderCourses();
     else if (type==='live') renderLive();
     else if (type==='pdf') renderPdfs();
+    else if (type==='news') renderNewsList();
     else if (type==='member') renderMembers();
     renderDashboard();
     toast('Eliminado');
@@ -960,6 +1028,7 @@
       courses: data.courses.map(c => ({...c, type:'video'})),
       live: data.live.map(c => ({...c, type:'live'})),
       pdfs: data.pdfs.map(c => ({...c, type:'pdf'})),
+      news: (data.news || []),
       members: data.members
     };
     const json = JSON.stringify(exportData, null, 2);
