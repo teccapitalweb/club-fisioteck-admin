@@ -254,7 +254,7 @@
       </div>
       <div class="admin-nav-item" data-section="live" onclick="showSection('live')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
-        Cursos en Línea
+        Webinar
       </div>
       <div class="admin-nav-item" data-section="pdfs" onclick="showSection('pdfs')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -323,7 +323,7 @@
     <!-- LIVE -->
     <section class="admin-section" id="sec-live">
       <div class="admin-page-header">
-        <div><div class="admin-page-title">Cursos en Línea</div><div class="admin-page-sub">Sesiones en vivo programadas</div></div>
+        <div><div class="admin-page-title">Webinar</div><div class="admin-page-sub">Webinars y sesiones en vivo</div></div>
         <button class="btn btn-p" onclick="openModal('live')">+ Nueva Sesión</button>
       </div>
       <div class="admin-card" style="overflow-x:auto;">
@@ -742,7 +742,7 @@
     currentModal = type;
     editingId = item ? item.id : null;
     const isEdit = !!item;
-    const titles = { course:'Curso Grabado', live:'Curso en Línea', pdf:'Material PDF', member:'Socio' };
+    const titles = { course:'Curso Grabado', live:'Webinar', pdf:'Material PDF', member:'Socio' };
     document.getElementById('modalTitle').textContent = (isEdit?'Editar':'Nuevo') + ' ' + titles[type];
 
     let html = '';
@@ -780,16 +780,24 @@
       `;
     } else if (type === 'live') {
       html = `
-        <div class="form-group"><label class="form-label">Título</label><input class="form-input" id="mTitle" value="${item?.title||''}"></div>
+        <div class="form-group"><label class="form-label">Título del webinar</label><input class="form-input" id="mTitle" value="${item?.title||''}"></div>
         <div class="form-group"><label class="form-label">Descripción</label><textarea class="form-textarea" id="mDesc">${item?.desc||''}</textarea></div>
         <div class="form-group"><label class="form-label">Categoría</label>
           ${categoryFieldHTML(item?.category||'')}
         </div>
-        <div class="form-group"><label class="form-label">Fecha (YYYY-MM-DD)</label><input class="form-input" type="date" id="mDate" value="${item?.date||''}"></div>
-        <div class="form-group"><label class="form-label">Hora (HH:MM)</label><input class="form-input" type="time" id="mTime" value="${item?.time||''}"></div>
+        <div class="form-group"><label class="form-label">Fecha</label><input class="form-input" type="date" id="mDate" value="${item?.date||''}"></div>
+        <div class="form-group"><label class="form-label">Hora</label><input class="form-input" type="time" id="mTime" value="${item?.time||''}"></div>
         <div class="form-group"><label class="form-label">Enlace de la sesión (Zoom, Meet, etc.)</label><input class="form-input" id="mLink" value="${item?.link||''}" placeholder="https://..."></div>
-        <div class="form-group"><label class="form-label">URL de Thumbnail (imagen de portada)</label><input class="form-input" id="mThumb" value="${item?.thumbnail||''}" placeholder="https://drive.google.com/file/d/.../view"><p style="font-size:.72rem;color:var(--text-muted);margin-top:4px;">Sube una imagen a Drive → compártela → pega el enlace aquí</p></div>
+        <div class="form-group"><label class="form-label">URL de Thumbnail (imagen de portada)</label><input class="form-input" id="mThumb" value="${item?.thumbnail||''}" placeholder="https://drive.google.com/file/d/.../view"></div>
         <div class="form-group"><label class="form-label">Badge</label><input class="form-input" id="mBadge" value="${item?.badge||''}"></div>
+        <hr style="margin:16px 0;border:none;border-top:1px solid var(--border);">
+        <p style="font-size:.82rem;font-weight:600;margin-bottom:12px;">👤 Instructor / Ponente</p>
+        <div class="form-group"><label class="form-label">Nombre del instructor</label><input class="form-input" id="mInstructor" value="${item?.instructor||''}" placeholder="Ej: Dr. García López"></div>
+        <div class="form-group"><label class="form-label">Rol / Especialidad</label><input class="form-input" id="mInstructorRole" value="${item?.instructorRole||''}" placeholder="Ej: Especialista en punción seca"></div>
+        <div class="form-group"><label class="form-label">Foto del instructor (Google Drive)</label><input class="form-input" id="mInstructorImg" value="${item?.instructorImg||''}" placeholder="https://drive.google.com/file/d/.../view"></div>
+        <hr style="margin:16px 0;border:none;border-top:1px solid var(--border);">
+        <p style="font-size:.82rem;font-weight:600;margin-bottom:12px;">🎬 Grabación (agregar después del evento)</p>
+        <div class="form-group"><label class="form-label">URL de la grabación (Google Drive)</label><input class="form-input" id="mRecordingUrl" value="${item?.recordingUrl||''}" placeholder="https://drive.google.com/file/d/.../view"><p style="font-size:.72rem;color:var(--text-muted);margin-top:4px;">Después del webinar, sube la grabación a Drive y pega el enlace aquí. Aparecerá en "Grabaciones disponibles".</p></div>
       `;
     } else if (type === 'pdf') {
       html = `
@@ -882,7 +890,11 @@
         time: document.getElementById('mTime').value,
         badge: document.getElementById('mBadge').value,
         link: document.getElementById('mLink').value,
-        thumbnail: document.getElementById('mThumb').value
+        thumbnail: document.getElementById('mThumb').value,
+        instructor: document.getElementById('mInstructor').value,
+        instructorRole: document.getElementById('mInstructorRole').value,
+        instructorImg: document.getElementById('mInstructorImg').value,
+        recordingUrl: document.getElementById('mRecordingUrl').value
       };
       if (!item.title) { toast('El título es obligatorio'); return; }
       if (editingId) { const idx = data.live.findIndex(c=>c.id===editingId); if(idx>=0) data.live[idx]=item; }
