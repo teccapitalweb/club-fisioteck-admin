@@ -751,6 +751,7 @@
         <div class="lesson-edit-row" style="display:flex;gap:8px;align-items:start;margin-bottom:8px;padding:10px;background:var(--bg);border-radius:8px;">
           <div style="flex:1;">
             <input class="form-input" placeholder="Título de la clase" value="${l.title||''}" data-lesson-field="title" data-lesson-idx="${i}" style="margin-bottom:6px;font-size:.85rem;">
+            <input class="form-input" placeholder="Descripción de la clase (opcional)" value="${l.desc||''}" data-lesson-field="desc" data-lesson-idx="${i}" style="margin-bottom:6px;font-size:.82rem;">
             <div style="display:flex;gap:8px;">
               <input class="form-input" placeholder="Duración (ej: 30min)" value="${l.duration||''}" data-lesson-field="duration" data-lesson-idx="${i}" style="font-size:.82rem;">
               <input class="form-input" placeholder="URL del video" value="${l.videoUrl||''}" data-lesson-field="videoUrl" data-lesson-idx="${i}" style="font-size:.82rem;">
@@ -830,6 +831,7 @@
     row.innerHTML = `
       <div style="flex:1;">
         <input class="form-input" placeholder="Título de la clase" data-lesson-field="title" data-lesson-idx="${idx}" style="margin-bottom:6px;font-size:.85rem;">
+        <input class="form-input" placeholder="Descripción de la clase (opcional)" data-lesson-field="desc" data-lesson-idx="${idx}" style="margin-bottom:6px;font-size:.82rem;">
         <div style="display:flex;gap:8px;">
           <input class="form-input" placeholder="Duración (ej: 30min)" data-lesson-field="duration" data-lesson-idx="${idx}" style="font-size:.82rem;">
           <input class="form-input" placeholder="URL del video" data-lesson-field="videoUrl" data-lesson-idx="${idx}" style="font-size:.82rem;">
@@ -849,9 +851,10 @@
       const lessons = [];
       lessonRows.forEach((row, i) => {
         const title = row.querySelector('[data-lesson-field="title"]').value.trim();
+        const desc = row.querySelector('[data-lesson-field="desc"]')?.value.trim() || '';
         const duration = row.querySelector('[data-lesson-field="duration"]').value.trim();
         const videoUrl = row.querySelector('[data-lesson-field="videoUrl"]').value.trim();
-        if (title) lessons.push({ id: Date.now() + i, title, duration, videoUrl });
+        if (title) lessons.push({ id: Date.now() + i, title, desc, duration, videoUrl });
       });
 
       const item = {
