@@ -314,7 +314,7 @@
       </div>
       <div class="admin-card" style="overflow-x:auto;">
         <table class="admin-table">
-          <thead><tr><th>Título</th><th>Categoría</th><th>Duración</th><th>Fecha</th><th>Badge</th><th>Acciones</th></tr></thead>
+          <thead><tr><th>Título</th><th>Categoría</th><th>Clases</th><th>Fecha</th><th>Badge</th><th>Acciones</th></tr></thead>
           <tbody id="coursesTable"></tbody>
         </table>
       </div>
@@ -581,19 +581,21 @@
     document.getElementById('dMembers').textContent = firebaseMembers.length || data.stats.members;
   }
   function renderCourses() {
-    document.getElementById('coursesTable').innerHTML = data.courses.map(c => `
+    document.getElementById('coursesTable').innerHTML = data.courses.map(c => {
+      const lessonCount = (c.lessons && c.lessons.length) || 0;
+      return `
       <tr>
         <td><strong>${c.title}</strong><br><span style="font-size:.78rem;color:var(--text-muted)">${c.desc}</span></td>
         <td><span class="badge badge-info">${c.category}</span></td>
-        <td>${c.duration}</td>
+        <td>${lessonCount} clase${lessonCount!==1?'s':''}</td>
         <td>${c.date}</td>
         <td>${c.badge ? `<span class="badge badge-warning">${c.badge}</span>` : '—'}</td>
         <td>
           <button class="btn btn-o btn-sm" onclick="editItem('course',${c.id})">Editar</button>
           <button class="btn btn-d btn-sm" onclick="deleteItem('course',${c.id})">Eliminar</button>
         </td>
-      </tr>
-    `).join('') || '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted);">No hay cursos aún</td></tr>';
+      </tr>`;
+    }).join('') || '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted);">No hay cursos aún</td></tr>';
   }
   function renderLive() {
     document.getElementById('liveTable').innerHTML = data.live.map(c => `
@@ -745,16 +747,34 @@
 
     let html = '';
     if (type === 'course') {
+      const lessonsHTML = (item?.lessons || []).map((l, i) => `
+        <div class="lesson-edit-row" style="display:flex;gap:8px;align-items:start;margin-bottom:8px;padding:10px;background:var(--bg);border-radius:8px;">
+          <div style="flex:1;">
+            <input class="form-input" placeholder="Título de la clase" value="${l.title||''}" data-lesson-field="title" data-lesson-idx="${i}" style="margin-bottom:6px;font-size:.85rem;">
+            <div style="display:flex;gap:8px;">
+              <input class="form-input" placeholder="Duración (ej: 30min)" value="${l.duration||''}" data-lesson-field="duration" data-lesson-idx="${i}" style="font-size:.82rem;">
+              <input class="form-input" placeholder="URL del video" value="${l.videoUrl||''}" data-lesson-field="videoUrl" data-lesson-idx="${i}" style="font-size:.82rem;">
+            </div>
+          </div>
+          <button class="btn btn-d btn-sm" onclick="this.closest('.lesson-edit-row').remove()" style="flex-shrink:0;margin-top:4px;">✕</button>
+        </div>
+      `).join('');
+
       html = `
-        <div class="form-group"><label class="form-label">Título</label><input class="form-input" id="mTitle" value="${item?.title||''}"></div>
+        <div class="form-group"><label class="form-label">Título del curso</label><input class="form-input" id="mTitle" value="${item?.title||''}"></div>
         <div class="form-group"><label class="form-label">Descripción</label><textarea class="form-textarea" id="mDesc">${item?.desc||''}</textarea></div>
         <div class="form-group"><label class="form-label">Categoría</label>
           ${categoryFieldHTML(item?.category||'')}
         </div>
-        <div class="form-group"><label class="form-label">Duración (ej: 2h 30min)</label><input class="form-input" id="mDuration" value="${item?.duration||''}"></div>
-        <div class="form-group"><label class="form-label">URL del Video (Google Drive, YouTube o Vimeo)</label><input class="form-input" id="mVideoUrl" value="${item?.videoUrl||''}" placeholder="https://drive.google.com/file/d/.../view"><p style="font-size:.72rem;color:var(--text-muted);margin-top:4px;">Sube el video a Drive → clic derecho → Compartir → "Cualquier persona con el enlace" → Copia el enlace</p></div>
-        <div class="form-group"><label class="form-label">URL de Thumbnail (imagen de portada)</label><input class="form-input" id="mThumb" value="${item?.thumbnail||''}" placeholder="https://drive.google.com/file/d/.../view"><p style="font-size:.72rem;color:var(--text-muted);margin-top:4px;">Sube una imagen a Drive → compártela igual → pega el enlace aquí</p></div>
+        <div class="form-group"><label class="form-label">URL de Thumbnail (imagen de portada)</label><input class="form-input" id="mThumb" value="${item?.thumbnail||''}" placeholder="https://drive.google.com/file/d/.../view"><p style="font-size:.72rem;color:var(--text-muted);margin-top:4px;">Sube una imagen a Drive → compártela → pega el enlace aquí</p></div>
         <div class="form-group"><label class="form-label">Badge (Nuevo, Popular, etc. — dejar vacío si no aplica)</label><input class="form-input" id="mBadge" value="${item?.badge||''}"></div>
+        <hr style="margin:20px 0;border:none;border-top:2px solid var(--border);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <label class="form-label" style="margin:0;font-size:1rem;font-weight:600;">📚 Clases del curso</label>
+          <button class="btn btn-o btn-sm" onclick="addLessonRow()" type="button">+ Agregar clase</button>
+        </div>
+        <div id="lessonsContainer">${lessonsHTML}</div>
+        <p style="font-size:.72rem;color:var(--text-muted);margin-top:8px;">Agrega las clases en orden. Cada clase necesita título y URL del video.</p>
       `;
     } else if (type === 'live') {
       html = `
@@ -800,21 +820,48 @@
   }
   function closeModal() { document.getElementById('modalOverlay').classList.remove('active'); currentModal=null; editingId=null; }
 
+  function addLessonRow() {
+    const container = document.getElementById('lessonsContainer');
+    const idx = container.children.length;
+    const row = document.createElement('div');
+    row.className = 'lesson-edit-row';
+    row.style.cssText = 'display:flex;gap:8px;align-items:start;margin-bottom:8px;padding:10px;background:var(--bg);border-radius:8px;';
+    row.innerHTML = `
+      <div style="flex:1;">
+        <input class="form-input" placeholder="Título de la clase" data-lesson-field="title" data-lesson-idx="${idx}" style="margin-bottom:6px;font-size:.85rem;">
+        <div style="display:flex;gap:8px;">
+          <input class="form-input" placeholder="Duración (ej: 30min)" data-lesson-field="duration" data-lesson-idx="${idx}" style="font-size:.82rem;">
+          <input class="form-input" placeholder="URL del video" data-lesson-field="videoUrl" data-lesson-idx="${idx}" style="font-size:.82rem;">
+        </div>
+      </div>
+      <button class="btn btn-d btn-sm" onclick="this.closest('.lesson-edit-row').remove()" style="flex-shrink:0;margin-top:4px;">✕</button>`;
+    container.appendChild(row);
+  }
+
   function saveModalItem() {
     const type = currentModal;
     const today = new Date().toISOString().split('T')[0];
 
     if (type === 'course') {
+      // Collect lessons
+      const lessonRows = document.querySelectorAll('#lessonsContainer .lesson-edit-row');
+      const lessons = [];
+      lessonRows.forEach((row, i) => {
+        const title = row.querySelector('[data-lesson-field="title"]').value.trim();
+        const duration = row.querySelector('[data-lesson-field="duration"]').value.trim();
+        const videoUrl = row.querySelector('[data-lesson-field="videoUrl"]').value.trim();
+        if (title) lessons.push({ id: Date.now() + i, title, duration, videoUrl });
+      });
+
       const item = {
         id: editingId || Date.now(),
         title: document.getElementById('mTitle').value,
         desc: document.getElementById('mDesc').value,
         category: getCatValue(),
-        duration: document.getElementById('mDuration').value,
         date: today,
         badge: document.getElementById('mBadge').value,
-        videoUrl: document.getElementById('mVideoUrl').value,
-        thumbnail: document.getElementById('mThumb').value
+        thumbnail: document.getElementById('mThumb').value,
+        lessons: lessons
       };
       if (!item.title) { toast('El título es obligatorio'); return; }
       if (editingId) { const idx = data.courses.findIndex(c=>c.id===editingId); if(idx>=0) data.courses[idx]=item; }
