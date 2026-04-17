@@ -4,14 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin — Club FisioTeck</title>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary: #0A6E5C;
-      --primary-light: #0D8A73;
-      --primary-dark: #064D40;
-      --accent: #E8B931;
-      --accent-light: #F5D56A;
+      --primary: #1B3F6B;
+      --primary-light: #2A5A8F;
+      --primary-dark: #122D4F;
+      --accent: #1565C0;
+      --accent-light: #4285D6;
       --bg: #F3F4F6;
       --bg-card: #FFFFFF;
       --bg-dark: #111827;
@@ -47,7 +47,7 @@
       animation: fadeUp .6s ease;
     }
     @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
-    .auth-title { font-family:'Playfair Display',serif; font-size:1.8rem; margin-bottom:4px; }
+    .auth-title { font-family:inherit; font-size:1.8rem; margin-bottom:4px; text-transform:uppercase; letter-spacing:3px; }
     .auth-title span { color:var(--accent); }
     .auth-badge { display:inline-block; background:var(--danger); padding:3px 12px; border-radius:20px; font-size:.7rem; font-weight:600; margin-bottom:24px; letter-spacing:1px; }
     .auth-input {
@@ -72,7 +72,7 @@
       transition:var(--transition);
     }
     .admin-sidebar-header { padding:20px; border-bottom:1px solid rgba(255,255,255,.06); }
-    .admin-sidebar-header h2 { font-family:'Playfair Display',serif; font-size:1.2rem; }
+    .admin-sidebar-header h2 { font-family:inherit; font-size:1.1rem; text-transform:uppercase; letter-spacing:2px; }
     .admin-sidebar-header h2 span { color:var(--accent); }
     .admin-sidebar-header .admin-tag { font-size:.65rem; background:var(--danger); padding:2px 8px; border-radius:10px; font-weight:600; display:inline-block; margin-top:4px; }
     .admin-nav { flex:1; padding:12px 0; overflow-y:auto; }
@@ -82,7 +82,7 @@
       border-left:3px solid transparent;
     }
     .admin-nav-item:hover { color:#fff; background:rgba(255,255,255,.04); }
-    .admin-nav-item.active { color:var(--accent); border-left-color:var(--accent); background:rgba(232,185,49,.05); }
+    .admin-nav-item.active { color:var(--accent); border-left-color:var(--accent); background:rgba(21,101,192,.05); }
     .admin-nav-item svg { width:18px; height:18px; flex-shrink:0; }
     .admin-nav-section { padding:6px 20px; font-size:.65rem; text-transform:uppercase; letter-spacing:1.5px; color:rgba(255,255,255,.2); margin-top:12px; }
     .admin-sidebar-footer {
@@ -97,7 +97,7 @@
       display:none; position:fixed; top:0; left:0; right:0; height:56px;
       background:var(--bg-sidebar); padding:0 16px; align-items:center; justify-content:space-between; z-index:99;
     }
-    .mobile-admin-bar h2 { font-family:'Playfair Display',serif; font-size:1rem; color:#fff; }
+    .mobile-admin-bar h2 { font-family:inherit; font-size:.9rem; color:#fff; text-transform:uppercase; letter-spacing:2px; }
     .mobile-admin-bar h2 span { color:var(--accent); }
     .mobile-admin-bar button { background:none; color:#fff; padding:8px; }
     .admin-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:99; }
@@ -131,7 +131,7 @@
     .admin-table { width:100%; border-collapse:collapse; font-size:.85rem; }
     .admin-table thead th { padding:10px 12px; text-align:left; color:var(--text-muted); font-weight:500; border-bottom:2px solid var(--border); font-size:.78rem; text-transform:uppercase; letter-spacing:.5px; }
     .admin-table tbody td { padding:12px; border-bottom:1px solid var(--border); vertical-align:middle; }
-    .admin-table tbody tr:hover { background:rgba(10,110,92,.02); }
+    .admin-table tbody tr:hover { background:rgba(27,63,107,.02); }
     .badge { padding:3px 10px; border-radius:20px; font-size:.72rem; font-weight:600; }
     .badge-success { background:rgba(34,197,94,.1); color:var(--success); }
     .badge-warning { background:rgba(245,158,11,.1); color:var(--warning); }
@@ -293,7 +293,7 @@
         <button class="btn btn-p" onclick="publishChanges()">📤 Publicar Cambios</button>
       </div>
       <div class="stats-row">
-        <div class="stat-box"><div class="stat-icon" style="background:rgba(10,110,92,.1);color:var(--primary);">📹</div><div class="stat-val" id="dCourses">0</div><div class="stat-lbl">Cursos Grabados</div></div>
+        <div class="stat-box"><div class="stat-icon" style="background:rgba(27,63,107,.1);color:var(--primary);">📹</div><div class="stat-val" id="dCourses">0</div><div class="stat-lbl">Cursos Grabados</div></div>
         <div class="stat-box"><div class="stat-icon" style="background:rgba(239,68,68,.1);color:var(--danger);">📄</div><div class="stat-val" id="dPdfs">0</div><div class="stat-lbl">PDFs</div></div>
         <div class="stat-box"><div class="stat-icon" style="background:rgba(245,158,11,.1);color:var(--warning);">🔴</div><div class="stat-val" id="dLive">0</div><div class="stat-lbl">Clases en Línea</div></div>
         <div class="stat-box"><div class="stat-icon" style="background:rgba(59,130,246,.1);color:var(--info);">👥</div><div class="stat-val" id="dMembers">0</div><div class="stat-lbl">Socios</div></div>
@@ -605,7 +605,7 @@
     document.getElementById('coursesTable').innerHTML = data.courses.map(c => {
       const lessonCount = (c.lessons && c.lessons.length) || 0;
       const isLocked = c.availableDate && c.availableDate > today;
-      const availLabel = !c.availableDate ? '<span style="color:var(--success);font-size:.82rem;">✓ Ya disponible</span>' : isLocked ? `<span style="color:#E8B931;font-size:.82rem;">🔒 ${c.availableDate}</span>` : '<span style="color:var(--success);font-size:.82rem;">✓ Ya disponible</span>';
+      const availLabel = !c.availableDate ? '<span style="color:var(--success);font-size:.82rem;">✓ Ya disponible</span>' : isLocked ? `<span style="color:#1565C0;font-size:.82rem;">🔒 ${c.availableDate}</span>` : '<span style="color:var(--success);font-size:.82rem;">✓ Ya disponible</span>';
       return `
       <tr${isLocked ? ' style="opacity:.7;"' : ''}>
         <td><strong>${c.title}</strong><br><span style="font-size:.78rem;color:var(--text-muted)">${c.desc}</span></td>
