@@ -318,7 +318,7 @@
       </div>
       <div class="admin-card" style="overflow-x:auto;">
         <table class="admin-table">
-          <thead><tr><th>Título</th><th>Categoría</th><th>Clases</th><th>Fecha</th><th>Badge</th><th>Acciones</th></tr></thead>
+          <thead><tr><th>Título</th><th>Categoría</th><th>Clases</th><th>Fecha</th><th>Disponible</th><th>Badge</th><th>Acciones</th></tr></thead>
           <tbody id="coursesTable"></tbody>
         </table>
       </div>
@@ -601,21 +601,25 @@
     document.getElementById('dMembers').textContent = firebaseMembers.length || data.stats.members;
   }
   function renderCourses() {
+    const today = new Date().toISOString().split('T')[0];
     document.getElementById('coursesTable').innerHTML = data.courses.map(c => {
       const lessonCount = (c.lessons && c.lessons.length) || 0;
+      const isLocked = c.availableDate && c.availableDate > today;
+      const availLabel = !c.availableDate ? '<span style="color:var(--success);font-size:.82rem;">✓ Ya disponible</span>' : isLocked ? `<span style="color:#E8B931;font-size:.82rem;">🔒 ${c.availableDate}</span>` : '<span style="color:var(--success);font-size:.82rem;">✓ Ya disponible</span>';
       return `
-      <tr>
+      <tr${isLocked ? ' style="opacity:.7;"' : ''}>
         <td><strong>${c.title}</strong><br><span style="font-size:.78rem;color:var(--text-muted)">${c.desc}</span></td>
         <td><span class="badge badge-info">${c.category}</span></td>
         <td>${lessonCount} clase${lessonCount!==1?'s':''}</td>
         <td>${c.date}</td>
+        <td>${availLabel}</td>
         <td>${c.badge ? `<span class="badge badge-warning">${c.badge}</span>` : '—'}</td>
         <td>
           <button class="btn btn-o btn-sm" onclick="editItem('course',${c.id})">Editar</button>
           <button class="btn btn-d btn-sm" onclick="deleteItem('course',${c.id})">Eliminar</button>
         </td>
       </tr>`;
-    }).join('') || '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted);">No hay cursos aún</td></tr>';
+    }).join('') || '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-muted);">No hay cursos aún</td></tr>';
   }
   function renderLive() {
     document.getElementById('liveTable').innerHTML = data.live.map(c => `
@@ -803,6 +807,7 @@
         </div>
         <div class="form-group"><label class="form-label">URL de Thumbnail (imagen de portada)</label><input class="form-input" id="mThumb" value="${item?.thumbnail||''}" placeholder="https://drive.google.com/file/d/.../view"><p style="font-size:.72rem;color:var(--text-muted);margin-top:4px;">Sube una imagen a Drive → compártela → pega el enlace aquí</p></div>
         <div class="form-group"><label class="form-label">Badge (Nuevo, Popular, etc. — dejar vacío si no aplica)</label><input class="form-input" id="mBadge" value="${item?.badge||''}"></div>
+        <div class="form-group"><label class="form-label">📅 Fecha de disponibilidad (opcional)</label><input class="form-input" type="date" id="mAvailableDate" value="${item?.availableDate||''}"><p style="font-size:.72rem;color:var(--text-muted);margin-top:4px;">Si pones una fecha futura, el curso aparecerá bloqueado (en gris) hasta ese día. Déjalo vacío para que esté disponible de inmediato.</p></div>
         <div class="form-group"><label class="form-label">Imagen del Temario (opcional)</label><input class="form-input" id="mTemario" value="${item?.temarioImg||''}" placeholder="https://drive.google.com/file/d/.../view"><p style="font-size:.72rem;color:var(--text-muted);margin-top:4px;">Sube la imagen del temario/programa a Drive → compártela → pega el enlace aquí. Se mostrará con el botón "Ver temario".</p></div>
         <hr style="margin:20px 0;border:none;border-top:2px solid var(--border);">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
@@ -924,6 +929,7 @@
         badge: document.getElementById('mBadge').value,
         thumbnail: document.getElementById('mThumb').value,
         temarioImg: document.getElementById('mTemario').value,
+        availableDate: document.getElementById('mAvailableDate').value || '',
         lessons: lessons
       };
       if (!item.title) { toast('El título es obligatorio'); return; }
