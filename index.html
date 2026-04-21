@@ -555,7 +555,12 @@
     if (pass === stored) {
       document.getElementById('auth-screen').classList.add('hidden');
       sessionStorage.setItem('admin_auth', '1');
-      initAdmin();
+      // Sign in anonymously to Firebase so Firestore rules work
+      firebase.auth().signInAnonymously().then(() => {
+        initAdmin();
+      }).catch(() => {
+        initAdmin(); // Try anyway
+      });
     } else {
       const el = document.getElementById('adminError');
       el.style.display = 'block';
@@ -566,6 +571,11 @@
   function checkAdminAuth() {
     if (sessionStorage.getItem('admin_auth') === '1') {
       document.getElementById('auth-screen').classList.add('hidden');
+      firebase.auth().signInAnonymously().then(() => {
+        initAdmin();
+      }).catch(() => {
+        initAdmin();
+      });
       return true;
     }
     return false;
@@ -1220,7 +1230,7 @@
 
   // ===== INIT =====
   document.addEventListener('DOMContentLoaded', () => {
-    if (checkAdminAuth()) initAdmin();
+    if (checkAdminAuth()) {} // initAdmin called inside checkAdminAuth
     document.getElementById('adminPass').addEventListener('keypress', e => { if(e.key==='Enter') adminLogin(); });
   });
 </script>
