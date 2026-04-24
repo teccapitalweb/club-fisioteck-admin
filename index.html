@@ -1173,7 +1173,7 @@
               ${n.accessUntil ? '<span>Acceso hasta: <strong>' + n.accessUntil + '</strong></span>' : ''}
               ${n.cancelledAt ? '<span>Cancelado: <strong>' + n.cancelledAt + '</strong></span>' : ''}
             </div>
-            ${n.type === 'cancellation' ? '<div style="margin-top:10px;"><a href="https://admin.shopify.com/store/pfueck-wm/apps/subscriptions-remix/app/contracts" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:var(--warning);color:#fff;border-radius:6px;font-size:.8rem;font-weight:600;">Cancelar en Shopify →</a></div>' : ''}
+            ${n.type === 'cancellation' ? '<div style="margin-top:10px;"><a href="https://dashboard.stripe.com/test/subscriptions" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:var(--warning);color:#fff;border-radius:6px;font-size:.8rem;font-weight:600;">Ver en Stripe →</a></div>' : ''}
           </div>
           <div style="text-align:right;flex-shrink:0;">
             <div style="font-size:.75rem;color:var(--text-muted);">${date}</div>
