@@ -1142,7 +1142,7 @@
   let notifications = [];
   async function loadNotifications() {
     try {
-      const snap = await fbDb.collection('notifications').orderBy('createdAt', 'desc').limit(50).get();
+      const snap = await fbDb.collection('notifications').where('club', '==', 'fisioteck').orderBy('createdAt', 'desc').limit(50).get();
       notifications = [];
       snap.forEach(doc => notifications.push({ id: doc.id, ...doc.data() }));
       renderNotifications();
