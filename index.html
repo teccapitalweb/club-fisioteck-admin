@@ -429,6 +429,19 @@
       </div>
       <div class="config-grid">
         <div class="admin-card">
+          <h3>💰 Precios de la Membresía</h3>
+          <p style="font-size:.85rem;color:var(--text-light);margin-bottom:12px;">Se reflejan en vivo en el club y en los checkouts de Stripe. Solo afectan a <strong>nuevas suscripciones</strong> — a quien ya está suscrito no se le cambia el cobro. Mínimo $10 MXN (límite de Stripe).</p>
+          <div class="form-group">
+            <label class="form-label">Precio mensual (MXN)</label>
+            <input class="form-input" type="number" min="10" id="cfgPrecioMes" value="249">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Precio anual (MXN)</label>
+            <input class="form-input" type="number" min="10" id="cfgPrecioAno" value="1999">
+          </div>
+          <button class="btn btn-p" onclick="guardarPreciosMembresia()">Guardar Precios</button>
+        </div>
+        <div class="admin-card">
           <h3>Contraseña del Admin</h3>
           <div class="form-group">
             <label class="form-label">Contraseña actual</label>
@@ -1228,10 +1241,58 @@
     }
   }
 
+  // ===== PRECIOS DINÁMICOS DE LA MEMBRESÍA (config/club en Firestore) =====
+  async function cargarPreciosMembresia() {
+    try {
+      const snap = await fbDb.collection('config').doc('club').get();
+      const c = snap.exists ? snap.data() : {};
+      const inMes = document.getElementById('cfgPrecioMes');
+      const inAno = document.getElementById('cfgPrecioAno');
+      if (inMes) inMes.value = Number(c.precioMes) > 0 ? Number(c.precioMes) : 249;
+      if (inAno) inAno.value = Number(c.precioAno) > 0 ? Number(c.precioAno) : 1999;
+    } catch (e) {
+      console.warn('[Admin] No se pudieron cargar los precios:', e.message);
+    }
+  }
+
+  async function guardarPreciosMembresia() {
+    try {
+      const precioMes = parseInt(document.getElementById('cfgPrecioMes').value) || 249;
+      const precioAno = parseInt(document.getElementById('cfgPrecioAno').value) || 1999;
+
+      // Stripe no acepta cargos menores a $10 MXN
+      if (precioMes < 10 || precioAno < 10) {
+        toast('El precio mínimo es $10 MXN (límite de Stripe)');
+        return;
+      }
+
+      await fbDb.collection('config').doc('club').set({
+        precioMes,
+        precioAno,
+        actualizadoPor: 'admin-fisioteck',
+        actualizadoEn: new Date().toISOString()
+      }, { merge: true });
+
+      toast('Precios guardados · Se aplican a los nuevos checkouts');
+      console.log('✅ Precios guardados:', { precioMes, precioAno });
+    } catch (e) {
+      toast('Error al guardar: ' + e.message);
+      console.error('Precios error:', e);
+    }
+  }
+
+  // Cargar precios al entrar a Configuración
+  const _origShowSection = showSection;
+  showSection = function(sec) {
+    _origShowSection(sec);
+    if (sec === 'config') cargarPreciosMembresia();
+  };
+
   // ===== INIT =====
   document.addEventListener('DOMContentLoaded', () => {
     if (checkAdminAuth()) {} // initAdmin called inside checkAdminAuth
     document.getElementById('adminPass').addEventListener('keypress', e => { if(e.key==='Enter') adminLogin(); });
+    cargarPreciosMembresia();
   });
 </script>
 
